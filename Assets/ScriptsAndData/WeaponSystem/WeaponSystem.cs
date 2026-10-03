@@ -1,0 +1,138 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class WeaponSystem : MonoBehaviour
+{
+    public Transform hand;
+    public Camera playerCamera;
+    public Transform arrowSpawn;
+
+    private WeaponData currentWeapon;
+    private GameObject currentWeaponObject;
+
+    private int currentAmmo;
+    private float nextFireTime;
+
+    void Update()
+    {
+        if (Keyboard.current.eKey.wasPressedThisFrame)
+        {
+            TryPickup();
+        }
+
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            UseWeapon();
+        }
+    }
+
+    void TryPickup()
+    {
+        Ray ray = new Ray(
+            playerCamera.transform.position,
+            playerCamera.transform.forward
+        );
+
+        if (Physics.Raycast(ray, out RaycastHit hit, 3f))
+        {
+            WeaponPickup pickup = hit.collider.GetComponentInParent<WeaponPickup>();
+
+            if (pickup != null)
+            {
+                EquipWeapon(pickup.weaponData);
+
+                pickup.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    public void EquipWeapon(WeaponData weaponData)
+    {
+        if (weaponData == null)
+        {
+            Debug.LogWarning("No weapon data provided.");
+            return;
+        }
+
+        if (weaponData.weaponPrefab == null)
+        {
+            Debug.LogWarning("Weapon prefab is missing!");
+            return;
+        }
+
+        if (currentWeaponObject != null)
+        {
+            Destroy(currentWeaponObject);
+        }
+
+        currentWeapon = weaponData;
+        currentAmmo = currentWeapon.maxAmmo;
+
+        currentWeaponObject = Instantiate(
+            currentWeapon.weaponPrefab,
+            hand
+        );
+
+        currentWeaponObject.transform.localPosition = Vector3.zero;
+        currentWeaponObject.transform.localRotation = Quaternion.identity;
+
+        Debug.Log("Equipped: " + currentWeapon.weaponName);
+        Debug.Log("Ammo: " + currentAmmo + "/" + currentWeapon.maxAmmo);
+    }
+
+    void UseWeapon()
+    {
+        if (currentWeapon == null)
+        {
+            return;
+        }
+
+        if (currentWeapon.useType == WeaponUseType.Bow)
+        {
+            FireProjectile();
+        }
+    }
+
+    void FireProjectile(){
+    if (currentAmmo <= 0)
+    {
+        Debug.Log("Out of ammo!");
+        return;
+    }
+
+    if (Time.time < nextFireTime)
+    {
+        return;
+    }
+
+    if (currentWeapon.projectilePrefab == null)
+    {
+        Debug.LogWarning("Projectile prefab is missing!");
+        return;
+    }
+
+    nextFireTime = Time.time + currentWeapon.cooldown;
+
+    Ray aimRay = playerCamera.ViewportPointToRay(
+        new Vector3(0.5f, 0.5f, 0f)
+    );
+
+    GameObject projectile = Instantiate(
+        currentWeapon.projectilePrefab,
+        arrowSpawn.position,
+        Quaternion.LookRotation(aimRay.direction)
+    );
+
+    Rigidbody rb = projectile.GetComponent<Rigidbody>();
+
+    if (rb != null)
+    {
+        rb.linearVelocity =
+            aimRay.direction * currentWeapon.projectileSpeed;
+    }
+
+        currentAmmo--;
+
+        Debug.Log("Ammo: " + currentAmmo + "/" + currentWeapon.maxAmmo);
+    }
+}

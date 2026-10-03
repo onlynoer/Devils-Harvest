@@ -21,13 +21,11 @@ public class FirstPersonLook : MonoBehaviour
         float mouseX = mouseInput.x * mouseSensitivity * Time.deltaTime;
         float mouseY = mouseInput.y * mouseSensitivity * Time.deltaTime;
 
-        // Look up and down
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
         transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
 
-        // Look left and right
         player.Rotate(Vector3.up * mouseX);
     }
 }
