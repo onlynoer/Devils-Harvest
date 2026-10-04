@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float speed = 5f;
+    public Player player;
     public float jumpForce = 7f;
     public float gravity = -20f;
 
@@ -67,7 +67,7 @@ public class PlayerMovement : MonoBehaviour
         // -------------------------
 
         Vector3 finalMovement =
-            movement * speed + Vector3.up * velocity.y;
+            movement * player.playerData.speed + Vector3.up * velocity.y;
 
         CollisionFlags flags =
             controller.Move(finalMovement * Time.deltaTime);

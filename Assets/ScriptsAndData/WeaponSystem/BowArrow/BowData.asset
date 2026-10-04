@@ -15,6 +15,7 @@ MonoBehaviour:
   weaponName: DefaultBow
   weaponPrefab: {fileID: 5689215608645113600, guid: 6d826ac466fcafb49879a5e5a942e557, type: 3}
   useType: 1
+  spawnType: 1
   damage: 10
   cooldown: 0.5
   maxAmmo: 30

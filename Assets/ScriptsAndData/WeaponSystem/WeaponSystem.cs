@@ -6,13 +6,20 @@ public class WeaponSystem : MonoBehaviour
     public Transform hand;
     public Camera playerCamera;
     public Transform arrowSpawn;
+    public Transform bulletSpawn;
+    public Transform magicSpawn;
 
     private WeaponData currentWeapon;
     private GameObject currentWeaponObject;
+    private Player player;
 
     private int currentAmmo;
     private float nextFireTime;
 
+    void Start()
+    {
+        player = GetComponent<Player>();
+    }
     void Update()
     {
         if (Keyboard.current.eKey.wasPressedThisFrame)
@@ -117,11 +124,31 @@ public class WeaponSystem : MonoBehaviour
         new Vector3(0.5f, 0.5f, 0f)
     );
 
+    Transform spawnPoint = GetSpawnPoint();
+
+    if (spawnPoint == null)
+    {
+        Debug.LogWarning("Projectile spawn point is missing!");
+        return;
+    }
+
     GameObject projectile = Instantiate(
         currentWeapon.projectilePrefab,
-        arrowSpawn.position,
+        spawnPoint.position,
         Quaternion.LookRotation(aimRay.direction)
     );
+
+    Projectile projectileDamage = projectile.GetComponent<Projectile>();
+    
+    if (projectileDamage != null && player != null)
+    {
+        float finalDamage =
+            currentWeapon.damage *
+            player.playerData.damageAmplifier;
+
+        projectileDamage.SetDamage(finalDamage);
+    }
+
 
     Rigidbody rb = projectile.GetComponent<Rigidbody>();
 
@@ -134,5 +161,22 @@ public class WeaponSystem : MonoBehaviour
         currentAmmo--;
 
         Debug.Log("Ammo: " + currentAmmo + "/" + currentWeapon.maxAmmo);
+    }
+    Transform GetSpawnPoint()
+    {
+        switch (currentWeapon.spawnType)
+        {
+            case WeaponSpawnType.Arrow:
+                return arrowSpawn;
+
+            case WeaponSpawnType.Bullet:
+                return bulletSpawn;
+
+            case WeaponSpawnType.Magic:
+                return magicSpawn;
+
+            default:
+                return null;
+        }
     }
 }

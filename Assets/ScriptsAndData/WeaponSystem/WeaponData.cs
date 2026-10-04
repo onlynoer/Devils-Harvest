@@ -7,6 +7,13 @@ public enum WeaponUseType
     Gun,
     Staff
 }
+public enum WeaponSpawnType
+{
+    None,
+    Arrow,
+    Bullet,
+    Magic
+}
 
 [CreateAssetMenu(fileName = "NewWeaponData", menuName = "Weapons/Weapon Data")]
 public class WeaponData : ScriptableObject
@@ -19,6 +26,9 @@ public class WeaponData : ScriptableObject
 
     [Header("Weapon Type")]
     public WeaponUseType useType;
+
+    [Header("Projectile Spawn")]
+    public WeaponSpawnType spawnType;
 
     [Header("Stats")]
     public float damage = 10f;
