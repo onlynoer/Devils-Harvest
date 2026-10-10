@@ -38,4 +38,7 @@ public class WeaponData : ScriptableObject
     [Header("Projectile")]
     public GameObject projectilePrefab;
     public float projectileSpeed = 30f;
+
+    [Header("Equipped Appearance")]
+    public Vector3 equippedScale = Vector3.one;
 }

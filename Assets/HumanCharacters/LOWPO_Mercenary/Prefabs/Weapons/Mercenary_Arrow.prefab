@@ -68,10 +68,10 @@ PrefabInstance:
       addedObject: {fileID: 3343361180367337643}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4df86790845c77e4a82e6177fabbff25, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7259010624967042667}
+      addedObject: {fileID: 4482200846414811471}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4df86790845c77e4a82e6177fabbff25, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4482200846414811471}
+      addedObject: {fileID: -2081328522648335415}
   m_SourcePrefab: {fileID: 100100000, guid: 4df86790845c77e4a82e6177fabbff25, type: 3}
 --- !u!1 &5305345980619666261 stripped
 GameObject:
@@ -126,20 +126,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &7259010624967042667
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5305345980619666261}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c133c8d00b7ce344b818c531b62136d5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Arrow
-  lifetime: 10
-  damage: 10
 --- !u!114 &4482200846414811471
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -153,3 +139,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
   damage: 0
+--- !u!114 &-2081328522648335415
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5305345980619666261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 390eb7f1f0cb9d34f83b1a4320a99ad4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectileHit
+  lifetime: 5

@@ -82,7 +82,7 @@ public class WeaponSystem : MonoBehaviour
 
         currentWeaponObject.transform.localPosition = Vector3.zero;
         currentWeaponObject.transform.localRotation = Quaternion.identity;
-
+        currentWeaponObject.transform.localScale = currentWeapon.equippedScale;
         Debug.Log("Equipped: " + currentWeapon.weaponName);
         Debug.Log("Ammo: " + currentAmmo + "/" + currentWeapon.maxAmmo);
     }
@@ -94,9 +94,17 @@ public class WeaponSystem : MonoBehaviour
             return;
         }
 
-        if (currentWeapon.useType == WeaponUseType.Bow)
+        switch (currentWeapon.useType)
         {
-            FireProjectile();
+            case WeaponUseType.Bow:
+            case WeaponUseType.Gun:
+            case WeaponUseType.Staff:
+                FireProjectile();
+                break;
+
+            case WeaponUseType.Melee:
+                // Melee attacks will be implemented separately.
+                break;
         }
     }
 
