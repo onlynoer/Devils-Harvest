@@ -1,26 +1,37 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MenuManager : MonoBehaviour
 {
     public GameObject mainMenuPanel;
     public GameObject settingsPanel;
+    public Button openSettingsButton;
 
-    public void Awake()
+    private void Awake()
     {
-        // Ensure the main menu is active and settings panel is inactive at the start
-        mainMenuPanel.SetActive(true);
-        settingsPanel.SetActive(false);
+        if (openSettingsButton != null)
+        {
+            openSettingsButton.onClick.RemoveListener(OpenSettings);
+            openSettingsButton.onClick.AddListener(OpenSettings);
+        }
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
     }
 
     public void OpenSettings()
     {
-        mainMenuPanel.SetActive(false);
-        settingsPanel.SetActive(true);
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(true);
     }
 
     public void CloseSettings()
     {
-        settingsPanel.SetActive(false);
-        mainMenuPanel.SetActive(true);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
+    }
+
+    private void OnDestroy()
+    {
+        if (openSettingsButton != null) openSettingsButton.onClick.RemoveListener(OpenSettings);
     }
 }

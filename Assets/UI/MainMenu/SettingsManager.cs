@@ -3,63 +3,86 @@ using UnityEngine.Audio;
 
 public class SettingsManager : MonoBehaviour
 {
-    public static SettingsManager Instance;
-
+    public static SettingsManager Instance { get; private set; }
     public AudioMixer audioMixer;
+
+    private const string Prefix = "DevilsHarvest.Settings.Audio.";
+    private const float DefaultVolume = 0.5f;
+    private bool savePending;
+
+    private static readonly string[] Keys = { "Master", "Music", "SFX", "UI" };
+    private static readonly string[] MixerParameters = { "MasterVolume", "MusicVolume", "SFXVolume", "UIVolume" };
+    private readonly float[] values = { DefaultVolume, DefaultVolume, DefaultVolume, DefaultVolume };
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
+        Instance = this;
     }
 
     private void Start()
     {
-        float masterVolume = PlayerPrefs.GetFloat("MasterVolume", 1f);
-        float musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
-        float sfxVolume = PlayerPrefs.GetFloat("SFXVolume", 1f);
-
-        ApplyVolume("MasterVolume", masterVolume);
-        ApplyVolume("MusicVolume", musicVolume);
-        ApplyVolume("SFXVolume", sfxVolume);
+        for (int i = 0; i < Keys.Length; i++)
+        {
+            string key = Prefix + Keys[i];
+            float fallback = PlayerPrefs.HasKey(key)
+                ? PlayerPrefs.GetFloat(key, DefaultVolume)
+                : PlayerPrefs.GetFloat(Keys[i] == "SFX" ? "SFXVolume" : Keys[i] + "Volume", DefaultVolume);
+            values[i] = Mathf.Clamp01(fallback);
+            Apply(i, values[i]);
+        }
     }
 
-    private void ApplyVolume(string parameterName, float volume)
-    {
-        float volumeDB = Mathf.Log10(Mathf.Max(volume, 0.0001f)) * 20f;
-        audioMixer.SetFloat(parameterName, volumeDB);
-    }
+    public float GetMasterVolume() => values[0];
+    public float GetMusicVolume() => values[1];
+    public float GetSFXVolume() => values[2];
+    public float GetUIVolume() => values[3];
 
-    public void SetMasterVolume(float volume)
-    {
-        float volumeDB = Mathf.Log10(Mathf.Max(volume, 0.0001f)) * 20f; //multi by 20 to convert to decibels
-        audioMixer.SetFloat("MasterVolume", volumeDB);
+    public void SetMasterVolume(float value) => SetVolume(0, value);
+    public void SetMusicVolume(float value) => SetVolume(1, value);
+    public void SetSFXVolume(float value) => SetVolume(2, value);
+    public void SetUIVolume(float value) => SetVolume(3, value);
 
-        PlayerPrefs.SetFloat("MasterVolume", volume);
+    public void SavePreferences()
+    {
+        if (!savePending) return;
         PlayerPrefs.Save();
+        savePending = false;
     }
 
-    public void SetMusicVolume(float volume)
+    private void SetVolume(int index, float value)
     {
-        float volumeDB = Mathf.Log10(Mathf.Max(volume, 0.0001f)) * 20f;
-        audioMixer.SetFloat("MusicVolume", volumeDB);
-
-        PlayerPrefs.SetFloat("MusicVolume", volume);
-        PlayerPrefs.Save();
+        value = Mathf.Clamp01(value);
+        if (Mathf.Approximately(values[index], value)) return;
+        values[index] = value;
+        Apply(index, value);
+        PlayerPrefs.SetFloat(Prefix + Keys[index], value);
+        savePending = true;
+        CancelInvoke(nameof(SavePreferences));
+        Invoke(nameof(SavePreferences), 0.6f);
     }
 
-    public void SetSFXVolume(float volume)
+    private void Apply(int index, float value)
     {
-        float volumeDB = Mathf.Log10(Mathf.Max(volume, 0.0001f)) * 20f;
-        audioMixer.SetFloat("SFXVolume", volumeDB);
+        if (audioMixer == null) return;
+        float decibels = value <= 0.0001f ? -80f : Mathf.Log10(value) * 20f;
+        audioMixer.SetFloat(MixerParameters[index], decibels);
+    }
 
-        PlayerPrefs.SetFloat("SFXVolume", volume);
-        PlayerPrefs.Save();
+    private void OnApplicationPause(bool paused)
+    {
+        if (paused) SavePreferences();
+    }
+
+    private void OnApplicationQuit() => SavePreferences();
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+        SavePreferences();
     }
 }
