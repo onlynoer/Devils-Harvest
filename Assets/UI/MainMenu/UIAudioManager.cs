@@ -1,13 +1,16 @@
 using UnityEngine;
 
+/// <summary>Provides shared hover and pressed feedback for menu UI elements.</summary>
 public class UIAudioManager : MonoBehaviour
 {
-    public static UIAudioManager Instance;
+    public static UIAudioManager Instance { get; private set; }
 
+    [Header("Audio source and clips")]
     public AudioSource audioSource;
     public AudioClip hoverSound;
     public AudioClip pressedSound;
 
+    [Header("Playback levels")]
     [Range(0f, 1f)]
     public float hoverVolume = 1.0f;
 
@@ -16,6 +19,12 @@ public class UIAudioManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("Duplicate UIAudioManager was found and disabled.", this);
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
     }
 
@@ -33,5 +42,10 @@ public class UIAudioManager : MonoBehaviour
         {
             audioSource.PlayOneShot(pressedSound, pressedVolume);
         }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 }

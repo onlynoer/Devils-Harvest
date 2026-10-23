@@ -7,8 +7,10 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+/// <summary>Editor command that builds and wires the Options UI in the existing MainMenu scene.</summary>
 public static class OptionsMenuSetup
 {
+    // Keep the font path and palette together so style adjustments stay easy to locate.
     private const string FontPath = "Assets/TextMesh Pro/Resources/Fonts & Materials/FontdinerSwanky-Regular SDF.asset";
     private static readonly Color Ivory = new Color(0.88f, 0.85f, 0.79f, 1f);
     private static readonly Color Muted = new Color(0.70f, 0.69f, 0.66f, 1f);
@@ -17,6 +19,7 @@ public static class OptionsMenuSetup
     [MenuItem("Tools/Devils Harvest/Build Options Menu")]
     public static void Build()
     {
+        // This command targets the existing SettingsPanel rather than creating another Canvas.
         var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
         if (!scene.IsValid() || scene.name != "MainMenu")
         {
@@ -86,7 +89,7 @@ public static class OptionsMenuSetup
         tabsLayout.childAlignment = TextAnchor.MiddleCenter; tabsLayout.childControlWidth = true;
         tabsLayout.childControlHeight = true; tabsLayout.childForceExpandWidth = true; tabsLayout.childForceExpandHeight = true;
 
-        var border = MakeImage("SettingsCardBorder", panel.transform, sprite, new Color(0.63f, 0.67f, 0.70f, 0.78f), false);
+        var border = MakeImage("SettingsCardBorder", panel.transform, sprite, new Color(0.63f, 0.67f, 0.70f, 1f), false);
         Stretch(border.rectTransform, new Vector2(0.235f, 0.13f), new Vector2(0.765f, 0.75f), Vector2.zero, Vector2.zero);
         var surface = MakeImage("SettingsCardSurface", border.transform, sprite, new Color(0.16f, 0.085f, 0.095f, 0.86f), false);
         Stretch(surface.rectTransform, Vector2.zero, Vector2.one, new Vector2(2, 2), new Vector2(-2, -2));
@@ -165,7 +168,7 @@ public static class OptionsMenuSetup
         Stretch(heading.rectTransform, new Vector2(0.05f, 0.66f), new Vector2(0.95f, 0.94f), Vector2.zero, Vector2.zero);
         var description = MakeText(title + "Description", page, font, body, 25, Muted, TextAlignmentOptions.Center);
         Stretch(description.rectTransform, new Vector2(0.08f, 0.20f), new Vector2(0.92f, 0.66f), Vector2.zero, Vector2.zero);
-        description.enableWordWrapping = true;
+        description.textWrappingMode = TextWrappingModes.Normal;
     }
 
     private static void MakeVolumeRow(Transform parent, Sprite sprite, TMP_FontAsset font, string label,

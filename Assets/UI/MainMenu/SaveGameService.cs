@@ -4,16 +4,19 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>Mutable progress payload stored with a world save.</summary>
 [Serializable]
 public sealed class SaveProgress
 {
     public string currentScene = "";
+    public string startingLevelId = "main-level";
     public int day = 1;
     public int harvestedItems;
-    // Game systems can store additional versioned progress here as JSON.
+    // Game systems can serialize additional versioned progress here without changing this save format.
     public string customData = "{}";
 }
 
+/// <summary>Serializable save record for one named world.</summary>
 [Serializable]
 public sealed class SaveGameData
 {
@@ -24,7 +27,7 @@ public sealed class SaveGameData
     public SaveProgress progress = new SaveProgress();
 }
 
-/// <summary>Small JSON-backed world save store. Files are kept in persistentDataPath/DevilsHarvest/Saves.</summary>
+/// <summary>Creates, loads, lists, and updates JSON world saves in persistentDataPath/DevilsHarvest/Saves.</summary>
 public static class SaveGameService
 {
     private const string FolderName = "DevilsHarvest/Saves";
@@ -33,7 +36,7 @@ public static class SaveGameService
 
     public static SaveGameData ActiveSave => activeSave;
 
-    public static SaveGameData Create(string name)
+    public static SaveGameData Create(string name, string startingLevelId = "main-level")
     {
         string cleanName = (name ?? "").Trim();
         if (cleanName.Length == 0) throw new ArgumentException("Enter a name for this harvest."); //text to display if no name is entered when making a new save
@@ -43,7 +46,7 @@ public static class SaveGameService
             saveName = cleanName,
             lastPlayedUtc = DateTime.UtcNow.ToString("o"),
             timePlayedSeconds = 0,
-            progress = new SaveProgress()
+            progress = new SaveProgress { startingLevelId = string.IsNullOrEmpty(startingLevelId) ? "main-level" : startingLevelId }
         };
         Write(save);
         SetActive(save);
@@ -60,7 +63,11 @@ public static class SaveGameService
             try
             {
                 var save = JsonUtility.FromJson<SaveGameData>(File.ReadAllText(path));
-                if (save != null && !string.IsNullOrEmpty(save.id) && save.progress != null) saves.Add(save);
+                if (save != null && !string.IsNullOrEmpty(save.id) && save.progress != null)
+                {
+                    if (string.IsNullOrEmpty(save.progress.startingLevelId)) save.progress.startingLevelId = "main-level";
+                    saves.Add(save);
+                }
             }
             catch (Exception exception) { Debug.LogWarning("Could not read save " + Path.GetFileName(path) + ": " + exception.Message); }
         }
@@ -118,6 +125,7 @@ public static class SaveGameService
 
     private static void Write(SaveGameData save)
     {
+        // Write a temporary file first so an interrupted write does not leave a partially written save.
         Directory.CreateDirectory(SaveDirectory);
         string path = Path.Combine(SaveDirectory, save.id + ".json");
         string tempPath = path + ".tmp";
@@ -172,6 +180,7 @@ public static class SaveGameService
         }
         private void Update()
         {
+            // Unscaled realtime keeps playtime accurate while gameplay time is paused.
             TickTime();
             if (Time.frameCount % 900 == 0) SaveActive();
         }

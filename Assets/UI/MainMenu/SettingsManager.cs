@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.Audio;
 
+/// <summary>Loads, applies, and persists master/music/SFX/UI volume preferences.</summary>
 public class SettingsManager : MonoBehaviour
 {
     public static SettingsManager Instance { get; private set; }
+    [Tooltip("Optional mixer with the four exposed parameters listed below. Leave empty to store preferences without applying them to a mixer.")]
     public AudioMixer audioMixer;
 
     private const string Prefix = "DevilsHarvest.Settings.Audio.";
@@ -11,6 +13,7 @@ public class SettingsManager : MonoBehaviour
     private bool savePending;
 
     private static readonly string[] Keys = { "Master", "Music", "SFX", "UI" };
+    // These names must match parameters exposed by the assigned AudioMixer.
     private static readonly string[] MixerParameters = { "MasterVolume", "MusicVolume", "SFXVolume", "UIVolume" };
     private readonly float[] values = { DefaultVolume, DefaultVolume, DefaultVolume, DefaultVolume };
 
@@ -56,6 +59,7 @@ public class SettingsManager : MonoBehaviour
 
     private void SetVolume(int index, float value)
     {
+        if (index < 0 || index >= values.Length) return;
         value = Mathf.Clamp01(value);
         if (Mathf.Approximately(values[index], value)) return;
         values[index] = value;

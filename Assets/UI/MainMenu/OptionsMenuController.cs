@@ -3,8 +3,10 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+/// <summary>Coordinates the Options tabs, audio sliders, tab styling, and close behavior.</summary>
 public class OptionsMenuController : MonoBehaviour
 {
+    [Header("Scene references")]
     public SettingsManager settingsManager;
     public MenuManager menuManager;
     public Button[] tabs;
@@ -15,15 +17,20 @@ public class OptionsMenuController : MonoBehaviour
     public TMP_Text[] volumeValues;
     public Button closeButton;
 
+    [Header("Tab colors")]
     [SerializeField] private Color selectedTabColor = new Color(0.37f, 0.35f, 0.32f, 0.98f);
     [SerializeField] private Color idleTabColor = new Color(0.19f, 0.19f, 0.20f, 0.94f);
     private readonly Color selectedTextColor = new Color(0.97f, 0.94f, 0.88f, 1f);
     private readonly Color idleTextColor = new Color(0.72f, 0.70f, 0.67f, 1f);
+    private UnityEngine.Events.UnityAction[] tabCallbacks;
+    private UnityEngine.Events.UnityAction<float>[] volumeCallbacks;
+    private UnityEngine.Events.UnityAction closeCallback;
 
     private void OnEnable() => Initialize();
 
     public void Initialize()
     {
+        // Resolve optional scene services and keep this usable when a page has no assigned reference.
         if (settingsManager == null) settingsManager = SettingsManager.Instance;
         if (sectionHeading == null)
         {
@@ -45,32 +52,50 @@ public class OptionsMenuController : MonoBehaviour
     private void BindControls()
     {
         if (tabs != null)
+        {
+            if (tabCallbacks == null || tabCallbacks.Length != tabs.Length)
+                tabCallbacks = new UnityEngine.Events.UnityAction[tabs.Length];
             for (int i = 0; i < tabs.Length; i++)
             {
                 int index = i;
                 if (tabs[i] == null) continue;
-                tabs[i].onClick.RemoveAllListeners();
-                tabs[i].onClick.AddListener(() => { SelectTab(index); PlayButtonSound(); });
+                if (tabCallbacks[i] != null) tabs[i].onClick.RemoveListener(tabCallbacks[i]);
+                tabCallbacks[i] = () => { SelectTab(index); PlayButtonSound(); };
+                tabs[i].onClick.AddListener(tabCallbacks[i]);
             }
+        }
 
         if (volumeSliders != null && settingsManager != null)
+        {
+            if (volumeCallbacks == null || volumeCallbacks.Length != volumeSliders.Length)
+                volumeCallbacks = new UnityEngine.Events.UnityAction<float>[volumeSliders.Length];
             for (int i = 0; i < volumeSliders.Length && i < 4; i++)
             {
                 if (volumeSliders[i] == null) continue;
-                volumeSliders[i].onValueChanged.RemoveAllListeners();
+                if (volumeCallbacks[i] != null) volumeSliders[i].onValueChanged.RemoveListener(volumeCallbacks[i]);
                 int index = i;
-                volumeSliders[i].onValueChanged.AddListener(value => SetVolume(index, value));
+                volumeCallbacks[i] = value => SetVolume(index, value);
+                volumeSliders[i].onValueChanged.AddListener(volumeCallbacks[i]);
             }
+        }
 
         if (closeButton != null)
         {
-            closeButton.onClick.RemoveAllListeners();
-            closeButton.onClick.AddListener(() => { CloseMenu(); PlayButtonSound(); });
+            if (closeCallback != null) closeButton.onClick.RemoveListener(closeCallback);
+            closeCallback = CloseMenuWithSound;
+            closeButton.onClick.AddListener(closeCallback);
         }
+    }
+
+    private void CloseMenuWithSound()
+    {
+        CloseMenu();
+        PlayButtonSound();
     }
 
     public void SelectTab(int index)
     {
+        // Page index is shared by the tab buttons, heading labels, and page objects.
         if (pages == null || pages.Length == 0) return;
         index = Mathf.Clamp(index, 0, pages.Length - 1);
         if (sectionHeading != null)
@@ -138,6 +163,18 @@ public class OptionsMenuController : MonoBehaviour
 
     private void OnDisable()
     {
+        UnbindControls();
         if (settingsManager != null) settingsManager.SavePreferences();
+    }
+
+    private void UnbindControls()
+    {
+        if (tabs != null && tabCallbacks != null)
+            for (int i = 0; i < tabs.Length && i < tabCallbacks.Length; i++)
+                if (tabs[i] != null && tabCallbacks[i] != null) tabs[i].onClick.RemoveListener(tabCallbacks[i]);
+        if (volumeSliders != null && volumeCallbacks != null)
+            for (int i = 0; i < volumeSliders.Length && i < volumeCallbacks.Length; i++)
+                if (volumeSliders[i] != null && volumeCallbacks[i] != null) volumeSliders[i].onValueChanged.RemoveListener(volumeCallbacks[i]);
+        if (closeButton != null && closeCallback != null) closeButton.onClick.RemoveListener(closeCallback);
     }
 }
