@@ -11,9 +11,9 @@ TagManager:
   - PlayerHead
   - Water
   - UI
-  - 
-  - 
-  - 
+  - Player
+  - Projectile
+  - Weapon
   - 
   - 
   - 

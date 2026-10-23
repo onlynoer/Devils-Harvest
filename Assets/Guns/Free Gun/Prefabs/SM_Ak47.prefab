@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7409864761378209009}
   - component: {fileID: 8989744294631078436}
   - component: {fileID: 2921550502116546855}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Ak47_Magazine
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -100,7 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1709849256630245519}
   - component: {fileID: -3587792221191140452}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SM_Ak47
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -155,7 +155,7 @@ GameObject:
   - component: {fileID: 3092972723331277569}
   - component: {fileID: 2923929667529402438}
   - component: {fileID: 3776131655508857885}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: AK47_Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -243,7 +243,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 437868646091231835}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Ak47
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -279,7 +279,7 @@ GameObject:
   - component: {fileID: 1881465541082822610}
   - component: {fileID: 3201033556428676938}
   - component: {fileID: 3826638933001604355}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: AK47_Bullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}

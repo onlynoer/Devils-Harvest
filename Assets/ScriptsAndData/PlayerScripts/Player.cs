@@ -5,6 +5,8 @@ public class Player : MonoBehaviour
     public PlayerData playerData;
 
     private float currentHealth;
+    public float CurrentHealth => currentHealth;
+    public float MaxHealth => playerData != null ? playerData.maxHealth : 0f;
 
     void Start()
     {
@@ -37,7 +39,7 @@ public class Player : MonoBehaviour
             0f
         );
 
-        currentHealth -= actualDamage;
+        currentHealth = Mathf.Max(currentHealth - actualDamage, 0f);
 
         Debug.Log(
             "Player took " +

@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -6731122393339757496}
   - component: {fileID: 7501944761197609266}
   - component: {fileID: 5329237785773262971}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SM_Bullet_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -121,7 +121,7 @@ GameObject:
   - component: {fileID: 6965400757647036215}
   - component: {fileID: 4392282984883386750}
   - component: {fileID: 5401504316433248656}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SM_Bullet_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
