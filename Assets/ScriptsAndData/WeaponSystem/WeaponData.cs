@@ -40,5 +40,6 @@ public class WeaponData : ScriptableObject
     public float projectileSpeed = 30f;
 
     [Header("Equipped Appearance")]
+    public Vector3 equippedRotation = Vector3.zero;
     public Vector3 equippedScale = Vector3.one;
 }
