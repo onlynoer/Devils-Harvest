@@ -169,3 +169,7 @@ Packages/packages-lock.json linguist-generated
 
 # Exceptions for .asset files such as lightning pre-baking
 LightingData.asset     binary
+
+# Generated native TerrainData and texture payloads are binary, not Unity YAML.
+Assets/Environment/Terrain/*.asset binary
+Assets/Environment/Textures/*.asset binary
