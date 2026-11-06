@@ -49,7 +49,6 @@ This section is managed by KitWright MCP for Unity. Everything between the begin
 
 - Project root: the folder that contains `Assets/` and `ProjectSettings/`.
 - Product name: `Devils-Harvest`
-- Project summary:
 
 ## Notes
 
