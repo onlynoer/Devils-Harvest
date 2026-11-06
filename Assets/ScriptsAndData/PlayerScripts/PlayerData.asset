@@ -15,4 +15,4 @@ MonoBehaviour:
   maxHealth: 100
   damageAmplifier: 1.5
   defense: 5
-  speed: 5
+  speed: 15
