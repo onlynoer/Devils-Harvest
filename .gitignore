@@ -116,3 +116,7 @@ InitTestScene*.unity*
 
 /Assets/SyntyStudios/
 /Assets/SyntyStudios.meta
+
+/_references_/
+# prevent token from being pushed to repo
+/.codex/config.toml
