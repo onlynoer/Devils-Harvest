@@ -31,6 +31,7 @@ public sealed class SaveGameData
 public static class SaveGameService
 {
     private const string FolderName = "DevilsHarvest/Saves";
+    private const string ActiveSavePreferenceKey = "DevilsHarvest.ActiveSaveId";
     private static SaveGameData activeSave;
     private static double lastTimerTick;
 
@@ -90,6 +91,30 @@ public static class SaveGameService
         return false;
     }
 
+    /// <summary>Deletes one save file and clears the active-save preference when it points to that save.</summary>
+    public static bool Delete(string id)
+    {
+        Guid parsedId;
+        if (!Guid.TryParseExact(id, "N", out parsedId)) return false;
+
+        string path = Path.Combine(SaveDirectory, parsedId.ToString("N") + ".json");
+        if (!File.Exists(path)) return false;
+
+        bool wasActive = activeSave != null && activeSave.id == id;
+        if (wasActive) FlushTime();
+
+        File.Delete(path);
+
+        if (wasActive) activeSave = null;
+        if (PlayerPrefs.GetString(ActiveSavePreferenceKey, "") == id)
+        {
+            PlayerPrefs.DeleteKey(ActiveSavePreferenceKey);
+            PlayerPrefs.Save();
+        }
+
+        return true;
+    }
+
     public static void SaveActive()
     {
         if (activeSave == null) return;
@@ -114,6 +139,7 @@ public static class SaveGameService
         SaveActive();
     }
 
+    // saves to locallow
     private static string SaveDirectory => Path.Combine(Application.persistentDataPath, FolderName);
 
     private static void SetActive(SaveGameData save)
@@ -148,14 +174,14 @@ public static class SaveGameService
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void RestoreSession()
     {
-        string id = PlayerPrefs.GetString("DevilsHarvest.ActiveSaveId", "");
+        string id = PlayerPrefs.GetString(ActiveSavePreferenceKey, "");
         if (!string.IsNullOrEmpty(id)) Load(id);
     }
 
     public static void SelectAsActive(SaveGameData save)
     {
         if (save == null) return;
-        PlayerPrefs.SetString("DevilsHarvest.ActiveSaveId", save.id);
+        PlayerPrefs.SetString(ActiveSavePreferenceKey, save.id);
         PlayerPrefs.Save();
     }
 

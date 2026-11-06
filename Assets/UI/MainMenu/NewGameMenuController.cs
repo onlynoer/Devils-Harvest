@@ -26,6 +26,15 @@ public sealed class NewGameMenuController : MonoBehaviour
     public Button newGameBackButton;
     public Button loadGameBackButton;
 
+    [Header("Load screen selection and delete confirmation")]
+    public GameObject loadSaveActions;
+    public Button playSelectedSaveButton;
+    public Button deleteSelectedSaveButton;
+    public GameObject deleteConfirmationPopup;
+    public TMP_Text deleteConfirmationText;
+    public Button cancelDeleteButton;
+    public Button confirmDeleteButton;
+
     [Header("Level selection buttons")]
     public Button[] levelButtons;
 
@@ -42,6 +51,10 @@ public sealed class NewGameMenuController : MonoBehaviour
     public string gameplaySceneName = "";
 
     private readonly List<GameObject> generatedRows = new List<GameObject>();
+    private readonly Dictionary<string, Image> saveRowImages = new Dictionary<string, Image>();
+    private readonly Dictionary<string, Button> saveRowButtons = new Dictionary<string, Button>();
+    private string selectedSaveId;
+    private string selectedSaveName;
     private static readonly Color Ivory = new Color(0.88f, 0.85f, 0.79f, 1f);
     private static readonly Color Muted = new Color(0.70f, 0.69f, 0.66f, 1f);
     private static readonly Color SelectedLevelColor = new Color32(0x99, 0x8A, 0x73, 0xFF);
@@ -57,10 +70,16 @@ public sealed class NewGameMenuController : MonoBehaviour
         Listen(startHarvestButton, StartHarvest);
         Listen(newGameBackButton, ReturnToMenu);
         Listen(loadGameBackButton, ReturnToMenu);
+        Listen(playSelectedSaveButton, PlaySelectedSave);
+        Listen(deleteSelectedSaveButton, ShowDeleteConfirmation);
+        Listen(cancelDeleteButton, CancelDelete);
+        Listen(confirmDeleteButton, ConfirmDeleteSelectedSave);
         BindLevelButtons();
         SelectLevel(0);
         if (newGameScreen != null) newGameScreen.SetActive(false);
         if (loadGameScreen != null) loadGameScreen.SetActive(false);
+        if (deleteConfirmationPopup != null) deleteConfirmationPopup.SetActive(false);
+        if (loadSaveActions != null) loadSaveActions.SetActive(false);
         if (buttonContainer != null) buttonContainer.SetActive(true);
     }
 
@@ -118,6 +137,7 @@ public sealed class NewGameMenuController : MonoBehaviour
     {
         SetScreen(loadGameScreen);
         if (loadMessageText != null) loadMessageText.text = "";
+        ClearSaveSelection();
         RefreshSaveList();
     }
 
@@ -132,6 +152,8 @@ public sealed class NewGameMenuController : MonoBehaviour
     {
         if (newGameScreen != null) newGameScreen.SetActive(false);
         if (loadGameScreen != null) loadGameScreen.SetActive(false);
+        if (deleteConfirmationPopup != null) deleteConfirmationPopup.SetActive(false);
+        ClearSaveSelection();
         if (buttonContainer != null) buttonContainer.SetActive(true);
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
     }
@@ -161,6 +183,9 @@ public sealed class NewGameMenuController : MonoBehaviour
         for (int i = 0; i < generatedRows.Count; i++)
             if (generatedRows[i] != null) Destroy(generatedRows[i]);
         generatedRows.Clear();
+        saveRowImages.Clear();
+        saveRowButtons.Clear();
+        ClearSaveSelection();
         var saves = SaveGameService.GetAll();
         if (saves.Count == 0) { AddSaveRow(null, "No harvests saved yet."); return; }
         foreach (var save in saves)
@@ -182,7 +207,99 @@ public sealed class NewGameMenuController : MonoBehaviour
         textObject.transform.SetParent(row.transform, false);
         var rect = textObject.GetComponent<RectTransform>(); rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = new Vector2(16, 4); rect.offsetMax = new Vector2(-16, -4);
         var text = textObject.GetComponent<TMP_Text>(); text.font = bodyFont; text.text = labelText; text.color = save != null ? Ivory : Muted; text.fontSize = 22; text.alignment = TextAlignmentOptions.MidlineLeft; text.enableAutoSizing = true; text.fontSizeMin = 16; text.fontSizeMax = 22; text.raycastTarget = false;
-        if (save != null) button.onClick.AddListener(() => LoadSave(save.id));
+        if (save != null)
+        {
+            saveRowImages[save.id] = image;
+            saveRowButtons[save.id] = button;
+            string saveId = save.id;
+            button.onClick.AddListener(() => SelectSave(saveId));
+        }
+    }
+
+    /// <summary>Selects a row without loading its world, then exposes the Play and Delete actions.</summary>
+    public void SelectSave(string id)
+    {
+        SaveGameData selected = SaveGameService.GetAll().Find(save => save.id == id);
+        if (selected == null) return;
+
+        selectedSaveId = selected.id;
+        selectedSaveName = selected.saveName;
+        //if (selectedSaveLabel != null) selectedSaveLabel.text = selected.saveName;
+        if (loadSaveActions != null) loadSaveActions.SetActive(true);
+        UpdateSaveRowStyles();
+
+        if (EventSystem.current != null && saveRowButtons.TryGetValue(id, out Button rowButton))
+            EventSystem.current.SetSelectedGameObject(rowButton.gameObject);
+    }
+
+    private void PlaySelectedSave()
+    {
+        if (!string.IsNullOrEmpty(selectedSaveId)) LoadSave(selectedSaveId);
+    }
+
+    private void ShowDeleteConfirmation()
+    {
+        if (string.IsNullOrEmpty(selectedSaveId) || deleteConfirmationPopup == null) return;
+        if (deleteConfirmationText != null)
+            deleteConfirmationText.text = "Delete \"" + selectedSaveName + "\"?";
+        deleteConfirmationPopup.SetActive(true);
+        if (EventSystem.current != null && cancelDeleteButton != null)
+            EventSystem.current.SetSelectedGameObject(cancelDeleteButton.gameObject);
+    }
+
+    private void CancelDelete()
+    {
+        if (deleteConfirmationPopup != null) deleteConfirmationPopup.SetActive(false);
+        if (EventSystem.current != null && !string.IsNullOrEmpty(selectedSaveId) && saveRowButtons.TryGetValue(selectedSaveId, out Button rowButton))
+            EventSystem.current.SetSelectedGameObject(rowButton.gameObject);
+    }
+
+    private void ConfirmDeleteSelectedSave()
+    {
+        if (string.IsNullOrEmpty(selectedSaveId))
+        {
+            CancelDelete();
+            return;
+        }
+
+        try
+        {
+            if (!SaveGameService.Delete(selectedSaveId))
+            {
+                if (loadMessageText != null) loadMessageText.text = "That save could not be found.";
+            }
+            else if (loadMessageText != null)
+            {
+                loadMessageText.text = "Deleted \"" + selectedSaveName + "\".";
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+            if (loadMessageText != null) loadMessageText.text = "The save could not be deleted.";
+        }
+
+        if (deleteConfirmationPopup != null) deleteConfirmationPopup.SetActive(false);
+        RefreshSaveList();
+    }
+
+    private void ClearSaveSelection()
+    {
+        selectedSaveId = null;
+        selectedSaveName = null;
+        if (loadSaveActions != null) loadSaveActions.SetActive(false);
+        if (deleteConfirmationPopup != null) deleteConfirmationPopup.SetActive(false);
+        //if (selectedSaveLabel != null) selectedSaveLabel.text = "Select a save to play or delete";
+        UpdateSaveRowStyles();
+    }
+
+    private void UpdateSaveRowStyles()
+    {
+        foreach (var entry in saveRowImages)
+            if (entry.Value != null)
+                entry.Value.color = entry.Key == selectedSaveId
+                    ? new Color(0.42f, 0.35f, 0.31f, 0.98f)
+                    : new Color(0.29f, 0.24f, 0.23f, 0.90f);
     }
 
     public void LoadSave(string id)

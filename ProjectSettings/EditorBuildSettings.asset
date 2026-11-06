@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/MainMenu/MainMenu.unity
+    guid: c1c96476ac899a6498b84d856d3f7e1d
+  - enabled: 1
     path: Assets/Scenes/DevilsHarvest_Island.unity
     guid: 4e02a5a090e4ee64b938f8707a8b3cbe
   m_configObjects:
