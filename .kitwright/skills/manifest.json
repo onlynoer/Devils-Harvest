@@ -7,8 +7,5 @@
             "id": "unity-mcp-workflow",
             "version": "1.0.1"
         }
-    ],
-    "managedFiles": [
-        ".codex/skills/unity-mcp-workflow/SKILL.md"
     ]
 }

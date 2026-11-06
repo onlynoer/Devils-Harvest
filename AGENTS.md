@@ -35,6 +35,7 @@ This section is managed by KitWright MCP for Unity. Everything between the begin
 - Avoid changing `Library/`, `Temp/`, `Logs/`, or `obj/`.
 
 ## Additional Project Rules
+
 - Inspect the active scene and project structure before making changes.
 - Use Unity MCP tools for live Editor operations whenever available.
 - Do not delete, rename, or overwrite existing scene objects or assets without asking.
@@ -48,6 +49,7 @@ This section is managed by KitWright MCP for Unity. Everything between the begin
 
 - Project root: the folder that contains `Assets/` and `ProjectSettings/`.
 - Product name: `Devils-Harvest`
+- Project summary:
 
 ## Notes
 

@@ -1,5 +1,19 @@
 {
   "dependencies": {
+    "com.kitwright.unity.mcp": {
+      "version": "https://github.com/kitwright/unity-mcp.git#main",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1",
+        "com.unity.ugui": "1.0.0",
+        "com.unity.test-framework": "1.4.6",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0"
+      },
+      "hash": "85ba3bf664a6562935de562a149d6a51d0254ca0"
+    },
     "com.unity.ai.navigation": {
       "version": "2.0.15",
       "depth": 0,
@@ -238,7 +252,7 @@
     },
     "com.unity.modules.imageconversion": {
       "version": "1.0.0",
-      "depth": 2,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {}
     },
@@ -321,6 +335,12 @@
         "com.unity.modules.physics": "1.0.0",
         "com.unity.modules.animation": "1.0.0"
       }
+    },
+    "com.unity.modules.unitywebrequest": {
+      "version": "1.0.0",
+      "depth": 1,
+      "source": "builtin",
+      "dependencies": {}
     }
   }
 }
