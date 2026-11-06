@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,6 +7,9 @@ public class PlayerMovement : MonoBehaviour
     public Player player;
     public float jumpForce = 7f;
     public float gravity = -20f;
+
+    [Header("Sprint")]
+    public float sprintMultiplier = 1.5f;
 
     private CharacterController controller;
     private Animator animator;
@@ -21,10 +25,7 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // -------------------------
         // Movement input
-        // -------------------------
-
         float x = 0f;
         float z = 0f;
 
@@ -37,12 +38,22 @@ public class PlayerMovement : MonoBehaviour
         animator.SetBool("isWalking", isWalking);
 
         Vector3 movement = transform.right * x + transform.forward * z;
+        movement = Vector3.ClampMagnitude(movement, 1f);
 
+        // Sprint
+        bool isSprinting =
+            (Keyboard.current.leftShiftKey.isPressed ||
+             Keyboard.current.rightShiftKey.isPressed)
+            && isWalking;
 
-        // -------------------------
+        float currentSpeed = player.playerData.speed;
+
+        if (isSprinting)
+        {
+            currentSpeed *= sprintMultiplier;
+        }
+
         // Gravity
-        // -------------------------
-
         if (isGrounded && velocity.y < 0)
         {
             velocity.y = -2f;
@@ -50,45 +61,28 @@ public class PlayerMovement : MonoBehaviour
 
         velocity.y += gravity * Time.deltaTime;
 
-
-        // -------------------------
         // Jump
-        // -------------------------
-
         if (Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded)
         {
             velocity.y = jumpForce;
             animator.SetBool("isJumping", true);
         }
 
-
-        // -------------------------
         // Move
-        // -------------------------
-
         Vector3 finalMovement =
-            movement * player.playerData.speed + Vector3.up * velocity.y;
+            movement * currentSpeed + Vector3.up * velocity.y;
 
         CollisionFlags flags =
             controller.Move(finalMovement * Time.deltaTime);
 
-
-        // -------------------------
         // Ground detection
-        // -------------------------
-
         isGrounded = (flags & CollisionFlags.Below) != 0;
 
-
-        // -------------------------
         // Landing
-        // -------------------------
-
         if (isGrounded && velocity.y < 0)
         {
             velocity.y = -2f;
             animator.SetBool("isJumping", false);
         }
-
     }
 }

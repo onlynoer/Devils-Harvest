@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class Creature : MonoBehaviour
 {
@@ -8,6 +9,8 @@ public class Creature : MonoBehaviour
 
     private Renderer[] renderers;
     private Color[] originalColors;
+
+    private Coroutine flashCoroutine;
 
     void Start()
     {
@@ -19,7 +22,6 @@ public class Creature : MonoBehaviour
 
         currentHealth = creatureData.maxHealth;
 
-        // Find all renderers on the deer and its children.
         renderers = GetComponentsInChildren<Renderer>();
 
         originalColors = new Color[renderers.Length];
@@ -39,10 +41,8 @@ public class Creature : MonoBehaviour
 
     public void TakeDamage(float damage, Vector3 damageDirection)
     {
-        if (creatureData == null)
-        {
+        if (creatureData == null || currentHealth <= 0)
             return;
-        }
 
         float actualDamage = Mathf.Max(
             damage - creatureData.defense,
@@ -50,11 +50,15 @@ public class Creature : MonoBehaviour
         );
 
         currentHealth -= actualDamage;
+        currentHealth = Mathf.Max(currentHealth, 0f);
+
         CreatureAI ai = GetComponent<CreatureAI>();
+
         if (ai != null)
         {
             ai.Flee(transform.position - damageDirection);
         }
+
         Debug.Log(
             creatureData.creatureName +
             " took " +
@@ -65,7 +69,10 @@ public class Creature : MonoBehaviour
             creatureData.maxHealth
         );
 
-        StartCoroutine(DamageFlash());
+        if (flashCoroutine != null)
+            StopCoroutine(flashCoroutine);
+
+        flashCoroutine = StartCoroutine(DamageFlash());
 
         if (currentHealth <= 0)
         {
@@ -73,25 +80,24 @@ public class Creature : MonoBehaviour
         }
     }
 
-    System.Collections.IEnumerator DamageFlash()
+    IEnumerator DamageFlash()
     {
-        // Turn red
         for (int i = 0; i < renderers.Length; i++)
         {
-            renderers[i].material.color = Color.Lerp(
-                originalColors[i],
-                Color.red,
-                0.5f
-            );
+            renderers[i].material.color =
+                creatureData.damageFlashColor;
         }
 
-        yield return new WaitForSeconds(0.15f);
+        yield return new WaitForSeconds(
+            creatureData.damageFlashDuration
+        );
 
-        // Return to normal
         for (int i = 0; i < renderers.Length; i++)
         {
             renderers[i].material.color = originalColors[i];
         }
+
+        flashCoroutine = null;
     }
 
     void Die()

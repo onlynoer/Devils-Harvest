@@ -15,7 +15,13 @@ public class CreatureData : ScriptableObject
     [Header("Combat")]
     public float attackRange = 2f;
     public float attackCooldown = 1f;
+    public float attackDuration = 1.2f;
+    public float attackHitDelay = 0.5f;
 
     [Header("Loot")]
     public int lootAmount = 5;
+
+    [Header("Damage Flash")]
+    public Color damageFlashColor = Color.red;
+    public float damageFlashDuration = 0.15f;
 }
