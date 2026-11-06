@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.kitwright.unity.mcp": {
-      "version": "https://github.com/kitwright/unity-mcp.git#upm",
+      "version": "https://github.com/kitwright/unity-mcp.git#main",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -12,7 +12,7 @@
         "com.unity.modules.uielements": "1.0.0",
         "com.unity.modules.unitywebrequest": "1.0.0"
       },
-      "hash": "63890d80c0a5fd2b563a78e19abf06ee37b49cea"
+      "hash": "85ba3bf664a6562935de562a149d6a51d0254ca0"
     },
     "com.unity.ai.navigation": {
       "version": "2.0.15",
@@ -304,9 +304,18 @@
     },
     "com.unity.modules.terrain": {
       "version": "1.0.0",
-      "depth": 2,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {}
+    },
+    "com.unity.modules.terrainphysics": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.terrain": "1.0.0"
+      }
     },
     "com.unity.modules.ui": {
       "version": "1.0.0",

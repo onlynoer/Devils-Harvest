@@ -34,6 +34,17 @@ This section is managed by KitWright MCP for Unity. Everything between the begin
 - If recompilation triggers a domain reload or interrupts a request, treat the result as unknown until `get_reload_recovery_status`, compilation checks, and MCP readback confirm it.
 - Avoid changing `Library/`, `Temp/`, `Logs/`, or `obj/`.
 
+## Additional Project Rules
+
+- Inspect the active scene and project structure before making changes.
+- Use Unity MCP tools for live Editor operations whenever available.
+- Do not delete, rename, or overwrite existing scene objects or assets without asking.
+- Prefer reversible Editor operations and preserve existing prefab references and asset GUIDs.
+- Do not install packages or execute arbitrary code without approval.
+- After making changes, inspect the Console for compilation errors.
+- Verify scene modifications in the live Unity Editor.
+- Summarize all objects, scripts, and assets changed.
+
 ## Project
 
 - Project root: the folder that contains `Assets/` and `ProjectSettings/`.
