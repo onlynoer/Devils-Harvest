@@ -171,5 +171,5 @@ Packages/packages-lock.json linguist-generated
 LightingData.asset     binary
 
 # Generated native TerrainData and texture payloads are binary, not Unity YAML.
-Assets/DevilsHarvest/Environment/Terrain/*.asset binary
-Assets/DevilsHarvest/Environment/Textures/*.asset binary
+Assets/Environment/Terrain/*.asset binary
+Assets/Environment/Textures/*.asset binary
