@@ -5,8 +5,10 @@ public class Player : MonoBehaviour
     public PlayerData playerData;
 
     private float currentHealth;
+    private bool isDead;
     public float CurrentHealth => currentHealth;
     public float MaxHealth => playerData != null ? playerData.maxHealth : 0f;
+    public bool IsDead => isDead;
 
     void Start()
     {
@@ -29,7 +31,7 @@ public class Player : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
-        if (playerData == null)
+        if (isDead || playerData == null)
         {
             return;
         }
@@ -56,8 +58,37 @@ public class Player : MonoBehaviour
         }
     }
 
+    public void Kill()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        currentHealth = 0f;
+        Die();
+    }
+
     void Die()
     {
+        if (isDead)
+        {
+            return;
+        }
+
+        isDead = true;
+        var movement = GetComponent<PlayerMovement>();
+        if (movement != null)
+        {
+            movement.enabled = false;
+        }
+
+        var controller = GetComponent<CharacterController>();
+        if (controller != null)
+        {
+            controller.enabled = false;
+        }
+
         Debug.Log("Player died!");
     }
 }

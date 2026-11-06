@@ -151478,15 +151478,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6200415589702429979, guid: dd2781eefba618e47aec1156ef835d2b, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.08
+      value: -2.0799866
       objectReference: {fileID: 0}
     - target: {fileID: 6200415589702429979, guid: dd2781eefba618e47aec1156ef835d2b, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 5.1
+      value: -0.02535057
       objectReference: {fileID: 0}
     - target: {fileID: 6200415589702429979, guid: dd2781eefba618e47aec1156ef835d2b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -11.22
+      value: -11.220001
       objectReference: {fileID: 0}
     - target: {fileID: 6200415589702429979, guid: dd2781eefba618e47aec1156ef835d2b, type: 3}
       propertyPath: m_LocalRotation.w
@@ -240114,6 +240114,9 @@ GameObject:
   - component: {fileID: 1196402652}
   - component: {fileID: 1196402654}
   - component: {fileID: 1196402653}
+  - component: {fileID: 1196402657}
+  - component: {fileID: 1196402656}
+  - component: {fileID: 1196402655}
   m_Layer: 0
   m_Name: Ocean - Animated Coastal Water (Visual Only)
   m_TagString: Untagged
@@ -240193,6 +240196,66 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1196402651}
   m_Mesh: {fileID: 4300000, guid: 4299988c6de2fae4ba611d83f0063b0a, type: 2}
+--- !u!114 &1196402655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196402651}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77842e14d59ab6c4dbbcbc1c05559dca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaterDeathZone
+--- !u!65 &1196402656
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196402651}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2400, y: 24, z: 2400}
+  m_Center: {x: 0, y: -12, z: 0}
+--- !u!54 &1196402657
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196402651}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &1196728736
 PrefabInstance:
   m_ObjectHideFlags: 0
