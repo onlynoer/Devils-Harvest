@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea14a54f066d42c458dee29c2e52c929, type: 3}
   m_Name: Boss1Data
   m_EditorClassIdentifier: Assembly-CSharp::CreatureData
-  creatureName: 
-  maxHealth: 100
-  damage: 10
-  defense: 0
-  movementSpeed: 3
+  creatureName: Boss1
+  maxHealth: 200
+  damage: 20
+  defense: 10
+  movementSpeed: 1
   attackRange: 2
   attackCooldown: 1
   attackDuration: 1.2
   attackHitDelay: 0.5
-  lootAmount: 5
+  lootAmount: 25
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
   damageFlashDuration: 0.15
