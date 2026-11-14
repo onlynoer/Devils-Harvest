@@ -17,6 +17,10 @@ public class WeaponSystem : MonoBehaviour
     private int currentAmmo;
     private float nextFireTime;
 
+    // Read-only weapon state for the HUD. There is currently no reserve-ammo or reload system.
+    public WeaponData EquippedWeapon => currentWeapon;
+    public int LoadedAmmo => currentAmmo;
+
     void Start()
     {
         player = GetComponent<Player>();
@@ -317,10 +321,28 @@ public class WeaponSystem : MonoBehaviour
 
         nextFireTime = Time.time + currentWeapon.cooldown;
         Ray aimRay = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        Vector3 fireDirection = aimRay.direction;
+        if (currentWeapon.useType == WeaponUseType.Gun)
+        {
+            // Converge the offset muzzle on the viewport aim point, rather than firing parallel to it.
+            const float aimDistance = 1000f;
+            Vector3 aimPoint = aimRay.GetPoint(aimDistance);
+            if (Physics.Raycast(aimRay, out RaycastHit aimHit, aimDistance,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            {
+                aimPoint = aimHit.point;
+            }
+
+            Vector3 muzzleToAimPoint = aimPoint - spawnPoint.position;
+            if (Vector3.Dot(muzzleToAimPoint, aimRay.direction) > 0f)
+            {
+                fireDirection = muzzleToAimPoint.normalized;
+            }
+        }
         GameObject projectile = Instantiate(
             currentWeapon.projectilePrefab,
             spawnPoint.position,
-            Quaternion.LookRotation(aimRay.direction)
+            Quaternion.LookRotation(fireDirection)
         );
 
         Projectile projectileDamage = projectile.GetComponent<Projectile>();
@@ -333,7 +355,7 @@ public class WeaponSystem : MonoBehaviour
         Rigidbody rb = projectile.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.linearVelocity = aimRay.direction * currentWeapon.projectileSpeed;
+            rb.linearVelocity = fireDirection * currentWeapon.projectileSpeed;
         }
 
         currentAmmo--;
