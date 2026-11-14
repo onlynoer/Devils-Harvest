@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13c1a0abaf4c44409673e72365f9f64, type: 3}
+  m_Name: AK47Data
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  weaponName: AK47
+  weaponPrefab: {fileID: 647499141696943476, guid: 91ae9411a4d02cf41964a3f538884b64, type: 3}
+  useType: 2
+  spawnType: 2
+  damage: 15
+  cooldown: 0.2
+  maxAmmo: 150
+  projectilePrefab: {fileID: 2086261179823682334, guid: 1471e98bb0946d847a15230e4b8cb13c, type: 3}
+  projectileSpeed: 80
+  equippedRotation: {x: 0, y: 0, z: 0}
+  equippedScale: {x: 2, y: 2, z: 2}

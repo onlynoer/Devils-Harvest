@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea14a54f066d42c458dee29c2e52c929, type: 3}
+  m_Name: DeerData
+  m_EditorClassIdentifier: Assembly-CSharp::CreatureData
+  creatureName: Deer
+  maxHealth: 100
+  damage: 0
+  defense: 0
+  movementSpeed: 3
+  attackRange: 0
+  attackCooldown: 0
+  attackDuration: 0
+  attackHitDelay: 0
+  lootAmount: 5
+  damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
+  damageFlashDuration: 0.15
