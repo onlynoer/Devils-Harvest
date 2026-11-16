@@ -122,3 +122,4 @@ InitTestScene*.unity*
 /_references_/
 # prevent token from being pushed to repo
 /.codex/config.toml
+/.mcp.json
