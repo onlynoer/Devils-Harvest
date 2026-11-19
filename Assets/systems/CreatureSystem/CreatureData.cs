@@ -18,8 +18,21 @@ public class CreatureData : ScriptableObject
     public float attackDuration = 1.2f;
     public float attackHitDelay = 0.5f;
 
+    [Header("Positional Audio")]
+    public UnityEngine.Audio.AudioMixerGroup soundGroup;
+    public AudioClip call;
+    public AudioClip step;
+    public AudioClip hurt;
+    public AudioClip death;
+    public AudioClip warning;
+    public AudioClip attack;
+    [Min(1f)] public float callDistance = 45f;
+    [Min(1f)] public float stepDistance = 14f;
+    [Min(.1f)] public float stride = .8f;
+
     [Header("Loot")]
     public int lootAmount = 5;
+    public MeatPickup meatDrop;
 
     [Header("Damage Flash")]
     public Color damageFlashColor = Color.red;

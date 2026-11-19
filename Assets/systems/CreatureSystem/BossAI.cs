@@ -30,9 +30,11 @@ public class BossAI : MonoBehaviour
     public float attackHitDelay = 0.5f;
     public float attackCooldown = 1.5f;
 
+    private Creature creature;
     private bool isWalking;
     private bool isChasing;
     private bool isAttacking;
+    public bool IsEngaged => isChasing || isAttacking;
     private bool hasHitPlayer;
 
     private float stateTimer;
@@ -44,6 +46,7 @@ public class BossAI : MonoBehaviour
 
     void Start()
     {
+        creature = GetComponent<Creature>();
         StartIdle();
     }
 
@@ -62,6 +65,8 @@ public class BossAI : MonoBehaviour
         // Check whether the player is nearby.
         if (distance <= detectionRange)
         {
+            if (!isChasing && creature != null && creature.Sounds != null)
+                creature.Sounds.Signal(creature.creatureData.warning);
             isChasing = true;
         }
         else if (distance > loseTargetRange)
@@ -231,6 +236,8 @@ public class BossAI : MonoBehaviour
 
     void StartAttack()
     {
+        if (creature != null && creature.Sounds != null)
+            creature.Sounds.Signal(creature.creatureData.attack);
         isAttacking = true;
         hasHitPlayer = false;
         attackTimer = 0f;
@@ -263,6 +270,8 @@ public class BossAI : MonoBehaviour
 
             animator.SetBool("IsAttacking", false);
 
+            if (creature != null && creature.Sounds != null)
+                creature.Sounds.FinishAttack();
             cooldownTimer = attackCooldown;
         }
     }

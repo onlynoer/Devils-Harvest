@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class WeaponSystem : MonoBehaviour
@@ -14,19 +14,45 @@ public class WeaponSystem : MonoBehaviour
     private GameObject currentWeaponObject;
     private WeaponPickup targetedPickup;
     private Player player;
+    private HarvestTrade trade;
+    private DealerWeaponSave ownedSlot;
+    private int burstRemaining;
+    private float nextBurstShot;
     private int currentAmmo;
     private float nextFireTime;
+
+    // Read-only weapon state for the HUD. There is currently no reserve-ammo or reload system.
+    public WeaponData EquippedWeapon => currentWeapon;
+    public int LoadedAmmo => currentAmmo;
 
     void Start()
     {
         player = GetComponent<Player>();
+        trade = GetComponent<HarvestTrade>();
     }
 
     void Update()
     {
-        targetedPickup = FindTargetedPickup();
+        Collider target = null;
+        if (playerCamera != null && Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward,
+            out var hit, pickupRange))
+            target = hit.collider;
+        bool interact = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
+        if (trade != null && trade.HandleInput(target, interact))
+        {
+            targetedPickup = null;
+            CancelBurst();
+            return;
+        }
+        if (burstRemaining > 0 && Time.time >= nextBurstShot)
+        {
+            FireProjectile();
+            burstRemaining--;
+            nextBurstShot = Time.time + .075f;
+        }
+        targetedPickup = FindTargetedPickup(target);
 
-        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+        if (interact)
         {
             TryPickup();
         }
@@ -62,20 +88,10 @@ public class WeaponSystem : MonoBehaviour
         pickup.gameObject.SetActive(false);
     }
 
-    WeaponPickup FindTargetedPickup()
+    WeaponPickup FindTargetedPickup(Collider target)
     {
-        if (playerCamera == null)
-        {
-            return null;
-        }
-
-        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        if (!Physics.Raycast(ray, out RaycastHit hit, pickupRange))
-        {
-            return null;
-        }
-
-        WeaponPickup pickup = hit.collider.GetComponentInParent<WeaponPickup>();
+        if (target == null) return null;
+        WeaponPickup pickup = target.GetComponentInParent<WeaponPickup>();
         if (pickup == null || !pickup.isActiveAndEnabled || pickup.weaponData == null ||
             pickup.weaponData.weaponPrefab == null)
         {
@@ -87,13 +103,14 @@ public class WeaponSystem : MonoBehaviour
 
     void OnGUI()
     {
-        if (targetedPickup == null || !targetedPickup.gameObject.activeInHierarchy || targetedPickup.weaponData == null)
-        {
-            return;
-        }
+        if (trade != null && trade.IsOpen) return;
+        string prompt = trade != null ? trade.Prompt : null;
+        if (prompt == null && targetedPickup != null && targetedPickup.gameObject.activeInHierarchy && targetedPickup.weaponData != null)
+            prompt = "Press E to equip " + targetedPickup.weaponData.weaponName;
+        if (prompt == null) return;
 
-        const float width = 300f;
-        const float height = 44f;
+        float width = Mathf.Min(Screen.width, 440f);
+        const float height = 60f;
         Rect tooltipRect = new Rect((Screen.width - width) * 0.5f, Screen.height * 0.72f, width, height);
         GUIStyle tooltipStyle = new GUIStyle(GUI.skin.box)
         {
@@ -102,7 +119,7 @@ public class WeaponSystem : MonoBehaviour
             fontStyle = FontStyle.Bold
         };
         tooltipStyle.normal.textColor = Color.white;
-        GUI.Box(tooltipRect, "Press E to equip " + targetedPickup.weaponData.weaponName, tooltipStyle);
+        GUI.Box(tooltipRect, prompt, tooltipStyle);
     }
 
     public void EquipWeapon(WeaponData weaponData)
@@ -125,13 +142,20 @@ public class WeaponSystem : MonoBehaviour
             return;
         }
 
-        if (currentWeapon != null)
-        {
+        // A paid weapon stays in its saved slot. Only ordinary pickups fall back into the world.
+        if (trade == null) trade = GetComponent<HarvestTrade>();
+        var newSlot = trade != null ? trade.Owned(weaponData) : null;
+        if (!string.IsNullOrEmpty(weaponData.dealerId) && newSlot == null) return;
+        CancelBurst();
+        if (ownedSlot != null)
+            Destroy(currentWeaponObject);
+        else if (currentWeapon != null)
             DropCurrentWeapon();
-        }
+        ownedSlot = newSlot;
 
         currentWeapon = weaponData;
-        currentAmmo = currentWeapon.maxAmmo;
+        currentAmmo = ownedSlot != null ? ownedSlot.ammo : currentWeapon.maxAmmo;
+        if (trade != null) trade.RememberEquipped(weaponData);
         currentWeaponObject = Instantiate(currentWeapon.weaponPrefab, hand);
         currentWeaponObject.transform.localPosition = Vector3.zero;
         currentWeaponObject.transform.localRotation = Quaternion.Euler(currentWeapon.equippedRotation);
@@ -274,7 +298,17 @@ public class WeaponSystem : MonoBehaviour
             case WeaponUseType.Bow:
             case WeaponUseType.Gun:
             case WeaponUseType.Staff:
-                FireProjectile();
+                if (Time.time >= nextFireTime && burstRemaining == 0)
+                {
+                    int before = currentAmmo;
+                    FireProjectile();
+                    if (before != currentAmmo)
+                    {
+                        nextFireTime = Time.time + currentWeapon.cooldown;
+                        burstRemaining = Mathf.Min(currentAmmo, Mathf.Max(0, currentWeapon.shotsPerTrigger - 1));
+                        nextBurstShot = Time.time + .075f;
+                    }
+                }
                 break;
 
             case WeaponUseType.Melee:
@@ -291,10 +325,6 @@ public class WeaponSystem : MonoBehaviour
             return;
         }
 
-        if (Time.time < nextFireTime)
-        {
-            return;
-        }
 
         if (currentWeapon.projectilePrefab == null)
         {
@@ -315,12 +345,29 @@ public class WeaponSystem : MonoBehaviour
             return;
         }
 
-        nextFireTime = Time.time + currentWeapon.cooldown;
         Ray aimRay = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        Vector3 fireDirection = aimRay.direction;
+        if (currentWeapon.useType == WeaponUseType.Gun)
+        {
+            // Converge the offset muzzle on the viewport aim point, rather than firing parallel to it.
+            const float aimDistance = 1000f;
+            Vector3 aimPoint = aimRay.GetPoint(aimDistance);
+            if (Physics.Raycast(aimRay, out RaycastHit aimHit, aimDistance,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            {
+                aimPoint = aimHit.point;
+            }
+
+            Vector3 muzzleToAimPoint = aimPoint - spawnPoint.position;
+            if (Vector3.Dot(muzzleToAimPoint, aimRay.direction) > 0f)
+            {
+                fireDirection = muzzleToAimPoint.normalized;
+            }
+        }
         GameObject projectile = Instantiate(
             currentWeapon.projectilePrefab,
             spawnPoint.position,
-            Quaternion.LookRotation(aimRay.direction)
+            Quaternion.LookRotation(fireDirection)
         );
 
         Projectile projectileDamage = projectile.GetComponent<Projectile>();
@@ -333,12 +380,16 @@ public class WeaponSystem : MonoBehaviour
         Rigidbody rb = projectile.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.linearVelocity = aimRay.direction * currentWeapon.projectileSpeed;
+            if (currentWeapon.useType == WeaponUseType.Gun) rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.linearVelocity = fireDirection * currentWeapon.projectileSpeed;
         }
 
         currentAmmo--;
+        if (ownedSlot != null) ownedSlot.ammo = currentAmmo;
         Debug.Log("Ammo: " + currentAmmo + "/" + currentWeapon.maxAmmo);
     }
+
+    public void CancelBurst() => burstRemaining = 0;
 
     Transform GetSpawnPoint()
     {

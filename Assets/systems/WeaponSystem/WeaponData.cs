@@ -20,6 +20,9 @@ public class WeaponData : ScriptableObject
 {
     [Header("Basic Info")]
     public string weaponName;
+    [Tooltip("Stable save identifier for dealer-owned equipment.")]
+    public string dealerId;
+    [Min(1)] public int shotsPerTrigger = 1;
 
     [Header("Visuals")]
     public GameObject weaponPrefab;
