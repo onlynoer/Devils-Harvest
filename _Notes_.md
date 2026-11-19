@@ -1,6 +1,4 @@
-the current mcp package has an error for our version (6000.5...) to fix this open
-library > packCache > com.kitwright.unity.mcp@85ba3bf664a6 > editor > tools > helpers > ObjectIdCodec.cs
-and change I think line 68 to UNITY_6000_3_OR_NEWER
+Unity 6000.5.5f1 and the locked KitWright package require a local compatibility fix after a fresh import. Close Unity. In Library/PackageCache/com.kitwright.unity.mcp@e67728296742/Editor/Tools/Helpers/ObjectIdCodec.cs, find HasSerializedObjectReferenceId and change the guard immediately before property.objectReferenceEntityIdValue.IsValid() from UNITY_6000_6_OR_NEWER to UNITY_6000_3_OR_NEWER. Reopen the project. A package cache rebuild can require this step again.
 
 switching from main to a branch
 first run

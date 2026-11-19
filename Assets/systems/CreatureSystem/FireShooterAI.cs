@@ -186,17 +186,18 @@ public class FireShooterAI : MonoBehaviour
         if (fireballPrefab == null || fireballSpawn == null)
             return;
 
-        Vector3 direction =
-            player.transform.position - fireballSpawn.position;
-
-        direction.y = 0f;
-        direction.Normalize();
+        var target = player.GetComponent<CharacterController>();
+        Vector3 aimPoint = target != null ? target.bounds.center : player.transform.position;
+        Vector3 direction = (aimPoint - fireballSpawn.position).normalized;
 
         GameObject fireball = Instantiate(
             fireballPrefab,
             fireballSpawn.position,
             Quaternion.LookRotation(direction)
         );
+
+        var hitbox = fireball.GetComponent<Collider>();
+        if (hitbox != null && controller != null) Physics.IgnoreCollision(hitbox, controller);
 
         Projectile projectile = fireball.GetComponent<Projectile>();
 

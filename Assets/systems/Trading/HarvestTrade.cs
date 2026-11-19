@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,22 +6,20 @@ public sealed class HarvestTrade : MonoBehaviour
 {
     public DevilDealer dealer;
     public DealerShopView shop;
-    public InputActionReference previousWeapon;
-    public InputActionReference nextWeapon;
     private SaveProgress progress;
     private WeaponSystem weapons;
     private Player player;
     private PlayerMovement movement;
     private FirstPersonLook look;
-    private bool restoreMovement, restoreLook;
+    private bool restoreMovement, restoreLook, restoreWeapons;
     private CursorLockMode previousLock;
     private bool previousCursor;
-    private int closedFrame = -1;
+    private int openedFrame;
+    private bool resumeInput;
     public bool IsOpen { get; private set; }
-    public string Prompt { get; private set; }
     public int Meat => progress.meat;
 
-    void Awake()
+    private void Awake()
     {
         weapons = GetComponent<WeaponSystem>();
         player = GetComponent<Player>();
@@ -31,110 +29,107 @@ public sealed class HarvestTrade : MonoBehaviour
         if (progress.dealerWeapons == null) progress.dealerWeapons = new List<DealerWeaponSave>();
     }
 
-    void OnEnable()
-    {
-        if (previousWeapon != null) previousWeapon.action.Enable();
-        if (nextWeapon != null) nextWeapon.action.Enable();
-    }
-
-    void Start()
+    private void Start()
     {
         shop.Bind(this, dealer);
+        int selected = -1;
         foreach (var offer in dealer.stock)
-            if (offer.weapon.dealerId == progress.equippedDealerId && Owned(offer.weapon) != null)
-                weapons.EquipWeapon(offer.weapon);
+        {
+            var saved = Owned(offer);
+            if (saved == null || saved.dropped || !weapons.Inventory.TryAdd(offer.weapon, saved.ammo)) continue;
+            if (offer.id == progress.equippedDealerId) selected = weapons.Inventory.SelectedIndex;
+        }
+        if (selected >= 0) weapons.Inventory.Select(selected);
+        else if (weapons.Inventory.Count > 0)
+        {
+            for (int i = 0; i < weapons.Inventory.Capacity; i++)
+                if (weapons.Inventory.GetSlot(i) == null) { weapons.Inventory.Select(i); break; }
+        }
+        SaveGameService.BeforeSave += CaptureInventory;
     }
 
-    public DealerWeaponSave Owned(WeaponData weapon)
+    private void OnDestroy() => SaveGameService.BeforeSave -= CaptureInventory;
+
+    private void CaptureInventory(SaveProgress saving)
     {
-        if (weapon == null || string.IsNullOrEmpty(weapon.dealerId)) return null;
-        return progress.dealerWeapons.Find(item => item.id == weapon.dealerId);
+        if (saving != progress) return;
+        progress.equippedDealerId = "";
+        foreach (var offer in dealer.stock)
+        {
+            var saved = Owned(offer);
+            if (saved == null) continue;
+            int index = FindSlot(offer.weapon);
+            if (index < 0)
+            {
+                if (!saved.dropped)
+                {
+                    var dropped = FindDropped(offer.weapon);
+                    if (dropped != null) saved.ammo = dropped.LoadedAmmo;
+                }
+                saved.dropped = true;
+                continue;
+            }
+            saved.dropped = false;
+            saved.ammo = weapons.Inventory.GetSlot(index).LoadedAmmo;
+            if (weapons.Inventory.SelectedIndex == index) progress.equippedDealerId = offer.id;
+        }
     }
 
-    public void RememberEquipped(WeaponData weapon)
+    public int FindSlot(WeaponData weapon)
     {
-        progress.equippedDealerId = weapon.dealerId;
+        for (int i = 0; i < weapons.Inventory.Capacity; i++)
+            if (weapons.Inventory.GetSlot(i)?.Definition == weapon) return i;
+        return -1;
+    }
+
+    public DealerWeaponSave Owned(DevilDealer.Offer offer) =>
+        progress.dealerWeapons.Find(item => item.id == offer.id);
+
+    public void Collect(MeatPickup pickup)
+    {
+        int amount = pickup.Collect();
+        progress.meat += amount;
+        progress.harvestedItems += amount;
         SaveGameService.SaveActive();
     }
 
-    public bool HandleInput(Collider target, bool interact)
+    public string AltarPrompt => (Meat > 0 ? "offer 1 meat\n" : "") +
+        "Meat carried: " + Meat + "   |   Offered: " + progress.meatOffered;
+
+    public void OfferMeat()
     {
-        Prompt = null;
-        if (IsOpen)
-        {
-            if (player.IsDead || (Keyboard.current != null && (Keyboard.current.escapeKey.wasPressedThisFrame || interact))) Close();
-            return true;
-        }
-        if (player.IsDead || closedFrame == Time.frameCount) return true;
-        if (previousWeapon != null && previousWeapon.action.WasPressedThisFrame())
-            return CycleOwned(-1);
-        if (nextWeapon != null && nextWeapon.action.WasPressedThisFrame())
-            return CycleOwned(1);
-        if (target == null) return false;
-        var trader = target.GetComponentInParent<DevilDealer>();
-        if (trader != null && trader == dealer)
-        {
-            Prompt = "Press E to Trade with the Devil Dealer";
-            if (interact) Open();
-            return interact;
-        }
-        var pickup = target.GetComponentInParent<MeatPickup>();
-        if (pickup != null && pickup.Amount > 0)
-        {
-            Prompt = "Press E to collect " + pickup.Amount + " meat";
-            if (interact)
-            {
-                int amount = pickup.Collect();
-                progress.meat += amount;
-                progress.harvestedItems += amount;
-                SaveGameService.SaveActive();
-            }
-            return interact;
-        }
-        if (target.GetComponentInParent<AltarOffering>() != null)
-        {
-            Prompt = "Meat carried: " + Meat + "   |   Offered: " + progress.meatOffered;
-            if (Meat > 0)
-            {
-                Prompt += "\nPress E to offer 1 meat";
-                if (interact)
-                {
-                    progress.meat--;
-                    progress.meatOffered++;
-                    SaveGameService.SaveActive();
-                }
-            }
-            return interact;
-        }
-        return false;
+        if (Meat <= 0) return;
+        progress.meat--;
+        progress.meatOffered++;
+        SaveGameService.SaveActive();
     }
 
-    private bool CycleOwned(int direction)
+    private void Update()
     {
-        var stock = dealer.stock;
-        int slot = System.Array.FindIndex(stock, offer => offer.weapon == weapons.EquippedWeapon);
-        if (slot < 0 && direction < 0) slot = 0;
-        for (int i = 0; i < stock.Length; i++)
-        {
-            slot = (slot + direction + stock.Length) % stock.Length;
-            var weapon = stock[slot].weapon;
-            if (Owned(weapon) == null) continue;
-            if (weapons.EquippedWeapon != weapon) weapons.EquipWeapon(weapon);
-            return true;
-        }
-        return false;
+        if (!IsOpen || Time.frameCount == openedFrame) return;
+        var keyboard = Keyboard.current;
+        if (player.IsDead || (keyboard != null && (keyboard.escapeKey.wasPressedThisFrame || keyboard.eKey.wasPressedThisFrame)))
+            Close();
     }
 
-    void Open()
+    private void LateUpdate()
     {
+        if (!resumeInput || player.IsDead) return;
+        resumeInput = false;
+        weapons.enabled = restoreWeapons;
+    }
+
+    public void Open()
+    {
+        if (IsOpen || player.IsDead) return;
+        openedFrame = Time.frameCount;
         IsOpen = true;
-        weapons.CancelBurst();
         previousLock = Cursor.lockState;
         previousCursor = Cursor.visible;
         restoreMovement = movement.enabled;
         restoreLook = look.enabled;
-        movement.enabled = false;
-        look.enabled = false;
+        restoreWeapons = weapons.enabled;
+        movement.enabled = look.enabled = weapons.enabled = false;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         shop.Show();
@@ -144,35 +139,45 @@ public sealed class HarvestTrade : MonoBehaviour
     {
         if (!IsOpen) return;
         IsOpen = false;
-        closedFrame = Time.frameCount;
-        if (shop != null) shop.gameObject.SetActive(false);
-        if (movement != null && player != null) movement.enabled = restoreMovement && !player.IsDead;
-        if (look != null) look.enabled = restoreLook;
+        shop.gameObject.SetActive(false);
+        movement.enabled = restoreMovement && !player.IsDead;
+        look.enabled = restoreLook;
         Cursor.lockState = previousLock;
         Cursor.visible = previousCursor;
+        resumeInput = true;
     }
 
-    void OnDisable()
+    private static WeaponPickup FindDropped(WeaponData weapon)
     {
-        if (IsOpen) Close();
-        if (previousWeapon != null) previousWeapon.action.Disable();
-        if (nextWeapon != null) nextWeapon.action.Disable();
+        foreach (var pickup in FindObjectsByType<WeaponPickup>())
+            if (pickup.isActiveAndEnabled && pickup.Definition == weapon) return pickup;
+        return null;
     }
 
     public void SelectOffer(int index)
     {
         if (!IsOpen || player.IsDead || index < 0 || index >= dealer.stock.Length) return;
         var offer = dealer.stock[index];
-        var w = offer.weapon;
-        if (w == null || w.weaponPrefab == null || w.projectilePrefab == null || weapons.hand == null ||
-            string.IsNullOrEmpty(w.dealerId) || offer.price < 1) return;
-        if (Owned(w) == null)
+        if (offer.weapon == null || offer.weapon.ModelPrefab == null || offer.price < 1) return;
+        var saved = Owned(offer);
+        int existing = FindSlot(offer.weapon);
+        if (existing >= 0) weapons.Inventory.Select(existing);
+        else
         {
-            if (Meat < offer.price) return;
-            progress.meat -= offer.price;
-            progress.dealerWeapons.Add(new DealerWeaponSave { id = w.dealerId, ammo = w.maxAmmo });
+            if (saved == null && Meat < offer.price) return;
+            // A paid item dropped with Q can also be reclaimed at the counter.
+            var dropped = saved != null ? FindDropped(offer.weapon) : null;
+            int ammo = dropped != null ? dropped.LoadedAmmo : saved?.ammo ?? offer.weapon.maxAmmo;
+            if (!weapons.Inventory.TryAdd(offer.weapon, ammo)) return;
+            if (dropped != null) dropped.gameObject.SetActive(false);
+            if (saved == null)
+            {
+                progress.meat -= offer.price;
+                progress.dealerWeapons.Add(new DealerWeaponSave { id = offer.id, ammo = ammo });
+            }
         }
-        if (weapons.EquippedWeapon != w) weapons.EquipWeapon(w);
+        CaptureInventory(progress);
+        SaveGameService.SaveActive();
         shop.Refresh();
     }
 }

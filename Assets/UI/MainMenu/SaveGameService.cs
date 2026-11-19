@@ -25,6 +25,7 @@ public sealed class DealerWeaponSave
 {
     public string id;
     public int ammo;
+    public bool dropped;
 }
 
 /// <summary>Serializable save record for one named world.</summary>
@@ -126,9 +127,12 @@ public static class SaveGameService
         return true;
     }
 
+    public static event Action<SaveProgress> BeforeSave;
+
     public static void SaveActive()
     {
         if (activeSave == null) return;
+        BeforeSave?.Invoke(activeSave.progress);
         activeSave.lastPlayedUtc = DateTime.UtcNow.ToString("o");
         Write(activeSave);
     }

@@ -8,6 +8,7 @@ public class Player : MonoBehaviour
     private float currentHealth;
     private bool isDead;
     private Pose arrival;
+    private bool resumeWeapons;
     public float CurrentHealth => currentHealth;
     public float MaxHealth => playerData != null ? playerData.maxHealth : 0f;
     public bool IsDead => isDead;
@@ -93,6 +94,7 @@ public class Player : MonoBehaviour
         isDead = false;
 
         if (controller != null) controller.enabled = true;
+        if (resumeWeapons && TryGetComponent(out WeaponSystem weapons)) weapons.enabled = true;
         if (movement != null)
         {
             movement.ResetMotion();
@@ -108,6 +110,11 @@ public class Player : MonoBehaviour
         }
 
         isDead = true;
+        if (TryGetComponent(out WeaponSystem weapons))
+        {
+            resumeWeapons = weapons.enabled;
+            weapons.enabled = false;
+        }
         var movement = GetComponent<PlayerMovement>();
         if (movement != null)
         {

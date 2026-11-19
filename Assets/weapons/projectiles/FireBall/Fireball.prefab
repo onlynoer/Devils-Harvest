@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7645836316751338750}
   - component: {fileID: 2975176219488788449}
   - component: {fileID: -2124369725862213122}
-  - component: {fileID: 3087114124338010525}
+  - component: {fileID: 7058146246283222261}
   m_Layer: 0
   m_Name: Fireball
   m_TagString: Untagged
@@ -155,7 +155,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
   damage: 0
---- !u!114 &3087114124338010525
+--- !u!114 &7058146246283222261
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -164,7 +164,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 995242950532534053}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 390eb7f1f0cb9d34f83b1a4320a99ad4, type: 3}
+  m_Script: {fileID: 11500000, guid: 58a76502fc81472468800dbd78bdc9cf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectileHit
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyFireballHit
   lifetime: 5
