@@ -22,7 +22,7 @@ public class FirstPersonLook : MonoBehaviour
         float mouseY = mouseInput.y * mouseSensitivity * Time.deltaTime;
 
         xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+        xRotation = Mathf.Clamp(xRotation, -90f, 70f); // limit vertical rotation 70 degrees down and 90 degrees up
 
         transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
 

@@ -1,11 +1,11 @@
 ---
 name: unity-mcp-workflow
 description: Efficient workflow for using Unity MCP to edit, import, compile, inspect, and test Unity projects.
-version: 1.0.1
+version: 1.0.2
 platform: codex
 ---
 <!-- KitWright Unity managed project skills -->
-<!-- KitWright Unity skill version: unity-mcp-workflow@1.0.1 -->
+<!-- KitWright Unity skill version: unity-mcp-workflow@1.0.2 -->
 
 # Unity MCP Workflow
 
@@ -214,7 +214,7 @@ After external C# or asset file edits:
 4. Do not follow step 2 or 3 with `get_compilation_errors`. Read `get_console_logs` errors before continuing.
 5. If a domain reload drops or interrupts the request, call `get_reload_recovery_status` when available, re-scan the MCP endpoint if needed, then continue from step 3.
 
-Editing several `.cs` files: write all of them with your own file tools, then run this sequence once. `create_script`, `edit_script`, `patch_script`, `edit_script_members` and `write_file` each refresh the asset database, so writing N files through them starts up to N imports and compiles.
+Editing several `.cs` files: write all of them with your own file tools, then run this sequence once. `patch_script`, `edit_script_members` and `write_file` each refresh the asset database, so writing N files through them starts up to N imports and compiles.
 
 Do not treat a disconnected, interrupted, or domain-reload-recovered request as a successful compile or edit. It only means the state is unknown until compilation checks and MCP readback confirm the final values.
 
@@ -261,5 +261,5 @@ For gameplay or network work, verify object identity, ownership, live instance e
 ## Metadata
 
 - Original skill id: `unity-mcp-workflow`
-- Skill version: `1.0.1`
+- Skill version: `1.0.2`
 - Source repository: `https://github.com/kitwright/unity-mcp`
