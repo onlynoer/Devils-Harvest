@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -6,12 +7,14 @@ public class Player : MonoBehaviour
 
     private float currentHealth;
     private bool isDead;
+    private Pose arrival;
     public float CurrentHealth => currentHealth;
     public float MaxHealth => playerData != null ? playerData.maxHealth : 0f;
     public bool IsDead => isDead;
 
     void Start()
     {
+        arrival = new Pose(transform.position, transform.rotation);
         if (playerData == null)
         {
             Debug.LogWarning("Player Data is missing!");
@@ -67,6 +70,34 @@ public class Player : MonoBehaviour
 
         currentHealth = 0f;
         Die();
+    }
+
+    public void KillAndRecover(Transform checkpoint = null)
+    {
+        if (isDead || playerData == null) return;
+        Kill();
+        StartCoroutine(Recover(checkpoint));
+    }
+
+    private IEnumerator Recover(Transform checkpoint)
+    {
+        yield return new WaitForSeconds(1f);
+
+        var controller = GetComponent<CharacterController>();
+        var movement = GetComponent<PlayerMovement>();
+        Pose destination = checkpoint != null
+            ? new Pose(checkpoint.position, checkpoint.rotation)
+            : arrival;
+        transform.SetPositionAndRotation(destination.position, destination.rotation);
+        currentHealth = MaxHealth;
+        isDead = false;
+
+        if (controller != null) controller.enabled = true;
+        if (movement != null)
+        {
+            movement.ResetMotion();
+            movement.enabled = true;
+        }
     }
 
     void Die()

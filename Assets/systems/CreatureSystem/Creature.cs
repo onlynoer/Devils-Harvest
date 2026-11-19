@@ -5,6 +5,8 @@ public class Creature : MonoBehaviour
 {
     public CreatureData creatureData;
 
+    public CreatureAudio Sounds { get; private set; }
+
     private float currentHealth;
 
     private Renderer[] renderers;
@@ -21,6 +23,11 @@ public class Creature : MonoBehaviour
         }
 
         currentHealth = creatureData.maxHealth;
+        if (creatureData.call != null)
+        {
+            Sounds = gameObject.AddComponent<CreatureAudio>();
+            Sounds.Initialize(creatureData);
+        }
 
         renderers = GetComponentsInChildren<Renderer>();
 
@@ -78,6 +85,10 @@ public class Creature : MonoBehaviour
         {
             Die();
         }
+        else if (actualDamage > 0f && Sounds != null)
+        {
+            Sounds.Signal(creatureData.hurt);
+        }
     }
 
     IEnumerator DamageFlash()
@@ -104,6 +115,15 @@ public class Creature : MonoBehaviour
     {
         Debug.Log(creatureData.creatureName + " died!");
 
+        if (Sounds != null) Sounds.Die();
+        if (creatureData.meatDrop != null && creatureData.lootAmount > 0)
+        {
+            Vector3 position = transform.position;
+            var terrain = Terrain.activeTerrain;
+            if (terrain != null) position.y = terrain.transform.position.y + terrain.SampleHeight(position);
+            var drop = Instantiate(creatureData.meatDrop, position, transform.rotation);
+            drop.SetYield(creatureData.lootAmount);
+        }
         Destroy(gameObject);
     }
 }
