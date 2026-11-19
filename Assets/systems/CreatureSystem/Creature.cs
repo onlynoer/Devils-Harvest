@@ -50,6 +50,11 @@ public class Creature : MonoBehaviour
         );
 
         currentHealth -= actualDamage;
+        MonsterAI monsterAI = GetComponent<MonsterAI>();
+        if (monsterAI != null)
+        {
+            monsterAI.Provoke();
+        }
         currentHealth = Mathf.Max(currentHealth, 0f);
 
         CreatureAI ai = GetComponent<CreatureAI>();

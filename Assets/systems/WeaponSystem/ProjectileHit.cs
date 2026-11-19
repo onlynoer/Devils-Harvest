@@ -1,18 +1,30 @@
+
 using UnityEngine;
 
 public class ProjectileHit : MonoBehaviour
 {
     public float lifetime = 5f;
 
+    private Projectile projectile;
+
     void Start()
     {
+        projectile = GetComponent<Projectile>();
         Destroy(gameObject, lifetime);
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        Projectile projectile = GetComponent<Projectile>();
+        HandleHit(collision.collider);
+    }
 
+    void OnTriggerEnter(Collider other)
+    {
+        HandleHit(other);
+    }
+
+    void HandleHit(Collider other)
+    {
         if (projectile == null)
             return;
 
@@ -25,13 +37,24 @@ public class ProjectileHit : MonoBehaviour
             damageDirection = rb.linearVelocity.normalized;
         }
 
-        Creature creature = collision.gameObject
-            .GetComponentInParent<Creature>();
+        Creature creature = other.GetComponentInParent<Creature>();
 
         if (creature != null)
         {
             creature.TakeDamage(projectile.damage, damageDirection);
-            Destroy(gameObject);
         }
+        else
+        {
+            Player player = other.GetComponentInParent<Player>();
+
+            if (player != null)
+            {
+                player.TakeDamage(projectile.damage);
+            }
+        }
+
+        Destroy(gameObject);
     }
 }
+
+
