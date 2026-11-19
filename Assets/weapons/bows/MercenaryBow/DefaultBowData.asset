@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f13c1a0abaf4c44409673e72365f9f64, type: 3}
   m_Name: DefaultBowData
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
-  itemName: 
-  itemPrefab: {fileID: 0}
-  weaponName: Bow
-  weaponPrefab: {fileID: 5689215608645113600, guid: 6d826ac466fcafb49879a5e5a942e557, type: 3}
+  itemName: Bow
+  itemPrefab: {fileID: 5689215608645113600, guid: 6d826ac466fcafb49879a5e5a942e557, type: 3}
+  icon: {fileID: 0}
+  iconRotation: {x: 12, y: -32, z: 0}
   useType: 1
   spawnType: 1
   damage: 10
@@ -25,3 +25,5 @@ MonoBehaviour:
   projectileSpeed: 50
   equippedRotation: {x: 0, y: 0, z: 0}
   equippedScale: {x: 2, y: 1.7, z: 1.3}
+  legacyWeaponName: 
+  legacyWeaponPrefab: {fileID: 0}

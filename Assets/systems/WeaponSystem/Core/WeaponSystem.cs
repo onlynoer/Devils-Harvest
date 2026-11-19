@@ -19,11 +19,15 @@ public sealed class WeaponSystem : MonoBehaviour
     public Transform bulletSpawn;
     public Transform magicSpawn;
 
-    [Header("Pickups")]
-    [Tooltip("How far (in meters) the player can look at a pickup and still grab it.")]
+    [Header("Interaction")]
+    [Tooltip("How far (in meters) the player can look at a pickup or other interactable and still use it.")]
     [Min(0f)] public float pickupRange = 4f;
     [Tooltip("Distance in front of the camera where dropped items spawn.")]
     [Min(0f)] [SerializeField] private float dropDistance = 2f;
+
+    [Header("Unarmed")]
+    [Tooltip("Fists shown and used when the selected slot holds no weapon. Optional.")]
+    [SerializeField] private FistsController fists;
 
     private static readonly Key[] SlotKeys =
     {
@@ -31,9 +35,14 @@ public sealed class WeaponSystem : MonoBehaviour
         Key.Digit6, Key.Digit7, Key.Digit8, Key.Digit9,
     };
 
+    private static readonly Collider[] MeleeHits = new Collider[32];
+    private readonly MeleeSwing swing = new MeleeSwing();
+    private readonly System.Collections.Generic.HashSet<Creature> meleeVictims = new System.Collections.Generic.HashSet<Creature>();
+    private WeaponData swingingWeapon;
+
     private WeaponInventory inventory;
     private Player player;
-    private WeaponPickup targetedPickup;
+    private IInteractable targetedInteractable;
     private GameObject equippedVisual;
     private WeaponInstance renderedInstance;
     private float nextFireTime;
@@ -50,6 +59,8 @@ public sealed class WeaponSystem : MonoBehaviour
     /// <summary>The selected item's weapon data, or null if the slot is empty or holds a non-weapon item.</summary>
     public WeaponData EquippedWeapon => Inventory.Selected != null ? Inventory.Selected.Definition : null;
     public int LoadedAmmo => Inventory.Selected != null ? Inventory.Selected.LoadedAmmo : 0;
+    /// <summary>What the player is looking at and can press E on, or null. Read by InteractPromptHud.</summary>
+    public IInteractable CurrentInteractable => targetedInteractable;
 
     private void Awake()
     {
@@ -59,18 +70,22 @@ public sealed class WeaponSystem : MonoBehaviour
 
     private void Update()
     {
-        targetedPickup = FindTargetedPickup();
+        targetedInteractable = FindTargetedInteractable();
         HandleKeyboard(Keyboard.current);
         HandleMouse(Mouse.current);
         SyncEquippedVisual();
+        ApplyEquippedPose();
+        if (swing.Tick()) ResolveMeleeHit(swingingWeapon);
     }
+
+    private float DamageMultiplier => player != null && player.playerData != null ? player.playerData.damageAmplifier : 1f;
 
     // ---------------------------------------------------------------- Input
 
     private void HandleKeyboard(Keyboard keyboard)
     {
         if (keyboard == null) return;
-        if (keyboard.eKey.wasPressedThisFrame) TryPickup();
+        if (keyboard.eKey.wasPressedThisFrame) Interact();
         if (keyboard.qKey.wasPressedThisFrame) DropSelected();
 
         int slotCount = Mathf.Min(inventory.Capacity, SlotKeys.Length);
@@ -96,28 +111,22 @@ public sealed class WeaponSystem : MonoBehaviour
         inventory.Select(((current + step) % capacity + capacity) % capacity);
     }
 
-    // ---------------------------------------------------------------- Pickup / drop
+    // ---------------------------------------------------------------- Interaction / drop
 
-    private WeaponPickup FindTargetedPickup()
+    private IInteractable FindTargetedInteractable()
     {
         if (playerCamera == null) return null;
         var ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (!Physics.Raycast(ray, out RaycastHit hit, pickupRange)) return null;
-        WeaponPickup pickup = hit.collider.GetComponentInParent<WeaponPickup>();
-        return pickup != null && pickup.isActiveAndEnabled && pickup.Definition != null ? pickup : null;
+        IInteractable target = hit.collider.GetComponentInParent<IInteractable>();
+        return target is Behaviour behaviour && behaviour.isActiveAndEnabled ? target : null;
     }
 
-    private void TryPickup()
+    private void Interact()
     {
-        if (targetedPickup == null) return;
-        if (targetedPickup.Definition.ModelPrefab == null)
-        {
-            Debug.LogWarning($"Pickup '{targetedPickup.name}' has no model prefab on its item data.", targetedPickup);
-            return;
-        }
-        if (!inventory.TryAdd(targetedPickup.Definition, targetedPickup.LoadedAmmo)) return;
-        targetedPickup.gameObject.SetActive(false);
-        targetedPickup = null;
+        if (targetedInteractable == null || !targetedInteractable.CanInteract(this)) return;
+        targetedInteractable.Interact(this);
+        targetedInteractable = null;
     }
 
     public void DropSelected()
@@ -183,14 +192,6 @@ public sealed class WeaponSystem : MonoBehaviour
         return result;
     }
 
-    private void OnGUI()
-    {
-        if (targetedPickup == null || !targetedPickup.gameObject.activeInHierarchy) return;
-        const float width = 160f, height = 21f;
-        var rect = new Rect((Screen.width - width) * .5f, Screen.height * .72f, width, height);
-        GUI.Box(rect, "Press E to pick up");
-    }
-
     // ---------------------------------------------------------------- Equipped model
 
     /// <summary>Swaps the model in the hand whenever the selected slot changes.</summary>
@@ -199,17 +200,16 @@ public sealed class WeaponSystem : MonoBehaviour
         WeaponInstance selected = inventory.Selected;
         if (selected == renderedInstance) return;
 
+        swing.Cancel();
         if (equippedVisual != null) Destroy(equippedVisual);
         equippedVisual = null;
         renderedInstance = selected;
 
         WeaponData weapon = selected != null ? selected.Definition : null;
-        if (weapon == null || weapon.weaponPrefab == null || hand == null) return;
+        if (weapon == null || weapon.ModelPrefab == null || hand == null) return;
 
-        equippedVisual = Instantiate(weapon.weaponPrefab, hand);
-        equippedVisual.transform.localPosition = Vector3.zero;
-        equippedVisual.transform.localRotation = Quaternion.Euler(weapon.equippedRotation);
-        equippedVisual.transform.localScale = weapon.equippedScale;
+        equippedVisual = Instantiate(weapon.ModelPrefab, hand);
+        ApplyEquippedPose();
 
         // The hand model is visual only: it must not be picked up, collide or simulate physics.
         foreach (WeaponPickup pickup in equippedVisual.GetComponentsInChildren<WeaponPickup>(true)) pickup.enabled = false;
@@ -217,12 +217,31 @@ public sealed class WeaponSystem : MonoBehaviour
         foreach (Rigidbody body in equippedVisual.GetComponentsInChildren<Rigidbody>(true)) body.isKinematic = true;
     }
 
+    /// <summary>
+    /// Puts the hand model at its WeaponData pose. Runs every frame (except mid-swing, which animates from this
+    /// pose), so editing Equipped Position / Rotation / Scale in Play Mode shows up immediately.
+    /// </summary>
+    private void ApplyEquippedPose()
+    {
+        if (equippedVisual == null || swing.IsSwinging) return;
+        WeaponData weapon = renderedInstance != null ? renderedInstance.Definition : null;
+        if (weapon == null) return;
+        Transform model = equippedVisual.transform;
+        model.localPosition = weapon.equippedPosition;
+        model.localRotation = Quaternion.Euler(weapon.equippedRotation);
+        model.localScale = weapon.equippedScale;
+    }
+
     // ---------------------------------------------------------------- Attacking
 
     private void UseWeapon()
     {
         WeaponInstance item = inventory.Selected;
-        if (item == null || item.Definition == null) return;
+        if (item == null || item.Definition == null)
+        {
+            if (fists != null) fists.TryPunch();
+            return;
+        }
         switch (item.Definition.useType)
         {
             case WeaponUseType.Bow:
@@ -231,8 +250,46 @@ public sealed class WeaponSystem : MonoBehaviour
                 FireProjectile(item);
                 break;
             case WeaponUseType.Melee:
-                // Not implemented yet.
+                StartMeleeSwing(item.Definition);
                 break;
+        }
+    }
+
+    private void StartMeleeSwing(WeaponData weapon)
+    {
+        if (Time.time < nextFireTime || swing.IsSwinging) return;
+        nextFireTime = Time.time + Mathf.Max(weapon.cooldown, weapon.swingDuration);
+        swingingWeapon = weapon;
+        // Without a hand model the swing has nothing to animate, but the hit still lands at the hit time.
+        if (equippedVisual != null) swing.Start(equippedVisual.transform, weapon);
+        else ResolveMeleeHit(weapon);
+    }
+
+    private void ResolveMeleeHit(WeaponData weapon)
+    {
+        if (weapon != null) DealMeleeDamage(weapon.meleeRange, weapon.meleeRadius, weapon.damage);
+    }
+
+    /// <summary>
+    /// Damages every Creature inside a capsule from the camera out to <paramref name="range"/>, once each.
+    /// Base damage is multiplied by the player's damage amplifier. Used by melee weapons and fists.
+    /// </summary>
+    public void DealMeleeDamage(float range, float radius, float baseDamage)
+    {
+        if (playerCamera == null) return;
+        Transform view = playerCamera.transform;
+        Vector3 start = view.position;
+        Vector3 end = start + view.forward * range;
+        int count = Physics.OverlapCapsuleNonAlloc(start, end, radius, MeleeHits,
+            Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+
+        meleeVictims.Clear();
+        float damage = baseDamage * DamageMultiplier;
+        for (int i = 0; i < count; i++)
+        {
+            Creature creature = MeleeHits[i].GetComponentInParent<Creature>();
+            if (creature == null || creature.transform.IsChildOf(transform) || !meleeVictims.Add(creature)) continue;
+            creature.TakeDamage(damage, view.forward);
         }
     }
 
@@ -248,11 +305,7 @@ public sealed class WeaponSystem : MonoBehaviour
 
         GameObject projectile = Instantiate(weapon.projectilePrefab, spawn.position, Quaternion.LookRotation(direction));
         Projectile damage = projectile.GetComponent<Projectile>();
-        if (damage != null)
-        {
-            float multiplier = player != null && player.playerData != null ? player.playerData.damageAmplifier : 1f;
-            damage.SetDamage(weapon.damage * multiplier);
-        }
+        if (damage != null) damage.SetDamage(weapon.damage * DamageMultiplier);
         Rigidbody body = projectile.GetComponent<Rigidbody>();
         if (body != null) body.linearVelocity = direction * weapon.projectileSpeed;
         item.LoadedAmmo--;

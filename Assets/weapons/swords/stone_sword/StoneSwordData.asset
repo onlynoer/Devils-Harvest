@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13c1a0abaf4c44409673e72365f9f64, type: 3}
+  m_Name: StoneSwordData
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  itemName: Stone Sword
+  itemPrefab: {fileID: 288974874294817497, guid: b01f4c8c5bc14d246979ed93921e4b67, type: 3}
+  icon: {fileID: 0}
+  iconRotation: {x: 12, y: -32, z: 0}
+  useType: 0
+  spawnType: 0
+  damage: 10
+  cooldown: 0.5
+  maxAmmo: 0
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 0
+  meleeRange: 2.2
+  meleeRadius: 0.5
+  swingDuration: 0.45
+  swingHitTime: 0.4
+  swingAngle: 9.9
+  swingTilt: 50.6
+  swingReach: 0.4
+  equippedPosition: {x: 0, y: -0.15, z: 0}
+  equippedRotation: {x: 0, y: 0, z: 0}
+  equippedScale: {x: 0.8, y: 0.8, z: 0.8}
+  legacyWeaponName: 
+  legacyWeaponPrefab: {fileID: 0}

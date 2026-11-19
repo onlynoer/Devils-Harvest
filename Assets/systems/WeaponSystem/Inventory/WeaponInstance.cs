@@ -23,6 +23,15 @@ public sealed class WeaponInstance
         set => loadedAmmo = Definition != null ? Mathf.Clamp(value, 0, Definition.maxAmmo) : 0;
     }
 
+    /// <summary>True for a weapon that has less than its max ammo.</summary>
+    public bool NeedsAmmo => Definition != null && loadedAmmo < Definition.maxAmmo;
+
+    /// <summary>Fills the weapon back up to its max ammo.</summary>
+    public void Refill()
+    {
+        if (Definition != null) LoadedAmmo = Definition.maxAmmo;
+    }
+
     /// <param name="loadedAmmo">Ammo in the weapon; -1 means full.</param>
     public WeaponInstance(InventoryItemData definition, int loadedAmmo)
     {

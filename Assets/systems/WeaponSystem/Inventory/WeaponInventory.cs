@@ -39,6 +39,16 @@ public sealed class WeaponInventory : MonoBehaviour
         }
     }
 
+    public bool HasFreeSlot
+    {
+        get
+        {
+            for (int i = 0; i < Capacity; i++)
+                if (i >= slots.Count || !IsOccupied(i)) return true;
+            return false;
+        }
+    }
+
     public int SelectedIndex => selectedIndex;
     public WeaponInstance Selected => GetSlot(selectedIndex);
     public IReadOnlyList<WeaponInstance> Slots => slots;
