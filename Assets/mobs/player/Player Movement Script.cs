@@ -10,6 +10,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Sprint")]
     public float sprintMultiplier = 1.5f;
 
+    public bool IsSprinting { get; private set; }
     private CharacterController controller;
     [SerializeField] private AudioSource footfall;
     private float stepTravel;
@@ -23,6 +24,7 @@ public class PlayerMovement : MonoBehaviour
     public void ResetMotion()
     {
         stepTravel = 0f;
+        IsSprinting = false;
         velocity = Vector3.zero;
         isGrounded = false;
         groundNormal = Vector3.up;
@@ -67,7 +69,7 @@ public class PlayerMovement : MonoBehaviour
 
         float currentSpeed = player.playerData.speed;
 
-        if (isSprinting)
+        if (IsSprinting)
         {
             currentSpeed *= sprintMultiplier;
         }

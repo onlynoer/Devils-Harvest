@@ -31,7 +31,7 @@ MonoBehaviour:
   swingTilt: 25
   swingReach: 0.15
   equippedPosition: {x: 0, y: 0, z: 0}
-  equippedRotation: {x: 0, y: 0, z: 0}
+  equippedRotation: {x: 0, y: 90, z: 0}
   equippedScale: {x: 2, y: 2, z: 2}
   legacyWeaponName: 
   legacyWeaponPrefab: {fileID: 0}

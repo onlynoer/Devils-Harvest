@@ -20,7 +20,22 @@ public class FireShooterAI : MonoBehaviour
     public float fireballDamage = 10f;
     public float shootingCooldown = 2f;
 
-    private float nextShotTime;
+    public GameObject castingCue;
+    [Min(.1f)] public float windup = .65f;
+    private static float nextGroupCast;
+    private float releaseTime, nextShotTime;
+    private bool casting;
+    private int strafeSide = 1;
+    private Vector3 markedTarget;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetCastSpacing() => nextGroupCast = 0f;
+
+    private void SetCasting(bool active)
+    {
+        casting = active;
+        if (castingCue != null) castingCue.SetActive(active);
+    }
 
     [Header("Movement")]
     public float walkSpeed = 1.5f;
@@ -42,6 +57,7 @@ public class FireShooterAI : MonoBehaviour
 
     void Start()
     {
+        SetCasting(false);
         StartIdle();
     }
 
@@ -62,17 +78,39 @@ public class FireShooterAI : MonoBehaviour
         else if (isAggressive && distance > loseTargetRange)
         {
             isAggressive = false;
+            SetCasting(false);
             StartIdle();
         }
 
         if (isAggressive)
         {
-            FacePlayer();
-            StopMoving();
-
-            if (distance <= shootingRange && Time.time >= nextShotTime)
+            if (casting)
             {
-                ShootFireball();
+                FacePlayer();
+                StopMoving();
+                if (castingCue != null) castingCue.transform.localScale = Vector3.one * Mathf.Lerp(.16f, .42f, 1f - (releaseTime - Time.time) / windup);
+                if (Time.time >= releaseTime)
+                {
+                    SetCasting(false);
+                    ShootFireball();
+                    strafeSide = -strafeSide;
+                }
+                return;
+            }
+            var toward = Vector3.ProjectOnPlane(player.transform.position - transform.position, Vector3.up).normalized;
+            Vector3 travel = distance > shootingRange ? toward : distance < 5f ? -toward : Vector3.Cross(Vector3.up,toward) * strafeSide;
+            Move(travel, walkSpeed);
+            animator.SetFloat("Speed", .65f);
+            if (distance <= shootingRange && Time.time >= nextShotTime && Time.time >= nextGroupCast && fireballSpawn != null)
+            {
+                var capsule = player.GetComponent<CharacterController>();
+                markedTarget = capsule != null ? capsule.bounds.center : player.transform.position;
+                if (Physics.Linecast(fireballSpawn.position, markedTarget, out var hit, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore) &&
+                    hit.collider.GetComponentInParent<Player>() != player) return;
+                SetCasting(true);
+                releaseTime = Time.time + windup;
+                nextShotTime = Time.time + shootingCooldown;
+                nextGroupCast = Time.time + .85f;
             }
         }
         else
@@ -186,9 +224,7 @@ public class FireShooterAI : MonoBehaviour
         if (fireballPrefab == null || fireballSpawn == null)
             return;
 
-        var target = player.GetComponent<CharacterController>();
-        Vector3 aimPoint = target != null ? target.bounds.center : player.transform.position;
-        Vector3 direction = (aimPoint - fireballSpawn.position).normalized;
+        Vector3 direction = (markedTarget - fireballSpawn.position).normalized;
 
         GameObject fireball = Instantiate(
             fireballPrefab,
@@ -213,7 +249,6 @@ public class FireShooterAI : MonoBehaviour
             rb.linearVelocity = direction * fireballSpeed;
         }
 
-        nextShotTime = Time.time + shootingCooldown;
     }
 }
 

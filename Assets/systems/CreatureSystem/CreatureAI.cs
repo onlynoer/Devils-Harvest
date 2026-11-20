@@ -25,18 +25,29 @@ public class CreatureAI : MonoBehaviour
     private bool isFleeing;
 
     private Vector3 fleeDirection;
-    private Vector3 fleeTarget;
+    private Player threat;
+    private PlayerMovement threatMovement;
+    private Vector3 danger;
+    private static readonly float[] escapeAngles = { 0, 30, -30, 60, -60, 95, -95, 135, -135 };
+    public bool IsFleeing => isFleeing;
+    private float NoticeRadius => threatMovement != null && threatMovement.isActiveAndEnabled && threatMovement.IsSprinting ? 28f : 18f;
 
     private float directionChangeTimer;
 
     void Start()
     {
+        threat = FindAnyObjectByType<Player>();
+        if (threat != null) threatMovement = threat.GetComponent<PlayerMovement>();
         StartIdle();
     }
 
     void Update()
     {
         stateTimer -= Time.deltaTime;
+
+        if (!isFleeing && threat != null && threat.playerData != null && !threat.IsDead &&
+            (threat.transform.position - transform.position).sqrMagnitude < NoticeRadius * NoticeRadius)
+            Flee(threat.transform.position);
 
         if (isFleeing)
         {
@@ -101,81 +112,44 @@ public class CreatureAI : MonoBehaviour
         isFleeing = true;
         isWalking = false;
 
-        fleeDirection = transform.position - dangerPosition;
-        fleeDirection.y = 0f;
-
-        if (fleeDirection.sqrMagnitude < 0.01f)
-        {
-            fleeDirection = transform.forward;
-        }
-
-        fleeDirection.Normalize();
-
-        float initialAngle = Random.Range(-90f, 90f);
-
-        fleeDirection =
-            Quaternion.Euler(0f, initialAngle, 0f) *
-            fleeDirection;
-
-        fleeDirection.Normalize();
-
-        directionChangeTimer = Random.Range(
-            directionChangeMinTime,
-            directionChangeMaxTime
-        );
-
-        UpdateFleeTarget();
-
+        danger = dangerPosition;
         stateTimer = fleeTime;
+        Steer();
     }
 
-    void UpdateFlee()
+    private void UpdateFlee()
     {
-        if (stateTimer <= 0f)
+        if (threat != null && !threat.IsDead) danger = threat.transform.position;
+        if (stateTimer <= 0 && (transform.position - danger).sqrMagnitude > fleeDistance * fleeDistance)
         {
             isFleeing = false;
             StartIdle();
             return;
         }
-
         directionChangeTimer -= Time.deltaTime;
+        if (directionChangeTimer <= 0) Steer();
+        mover.SetInput(Vector2.up, transform.position + fleeDirection, true, false);
+    }
 
-        if (directionChangeTimer <= 0f)
+    private void Steer()
+    {
+        Vector3 away = Vector3.ProjectOnPlane(transform.position - danger, Vector3.up).normalized;
+        if (away.sqrMagnitude < .1f) away = transform.forward;
+        away = Quaternion.Euler(0, Random.Range(-15f, 15f), 0) * away;
+        var origin = transform.position + Vector3.up * .75f;
+        foreach (float angle in escapeAngles)
         {
-            ChangeFleeDirection();
-
-            directionChangeTimer = Random.Range(
-                directionChangeMinTime,
-                directionChangeMaxTime
-            );
+            Vector3 candidate = Quaternion.Euler(0, angle, 0) * away;
+            if (Physics.SphereCast(origin, .28f, candidate, out _, 2.8f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) continue;
+            Vector3 ahead = origin + candidate * 3f;
+            if (!Physics.Raycast(ahead + Vector3.up * 2, Vector3.down, out var ground, 5f,
+                    Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore) || ground.normal.y < .66f) continue;
+            if (Terrain.activeTerrain != null && ground.point.y < 18.4f) continue;
+            fleeDirection = candidate;
+            directionChangeTimer = Random.Range(.3f, .55f);
+            return;
         }
-
-        mover.SetInput(
-            Vector2.up,
-            fleeTarget,
-            true,
-            false
-        );
-    }
-
-    void ChangeFleeDirection()
-    {
-        float angle = Random.Range(-90f, 90f);
-
-        fleeDirection =
-            Quaternion.Euler(0f, angle, 0f) *
-            fleeDirection;
-
-        fleeDirection.y = 0f;
-        fleeDirection.Normalize();
-
-        UpdateFleeTarget();
-    }
-
-    void UpdateFleeTarget()
-    {
-        fleeTarget =
-            transform.position +
-            fleeDirection * fleeDistance;
+        fleeDirection = -transform.forward;
+        directionChangeTimer = .2f;
     }
 }
