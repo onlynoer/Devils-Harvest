@@ -30,6 +30,31 @@ MonoBehaviour:
   swingAngle: 9.9
   swingTilt: 50.6
   swingReach: 0.4
+  equipSound:
+    clips:
+    - {fileID: 8300000, guid: 9b992356a24b69f47b301b81880377d5, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  useSound:
+    clips:
+    - {fileID: 8300000, guid: c5572d2ae1954c84eabb39c1a80a986b, type: 3}
+    - {fileID: 8300000, guid: 740c8083e56af53458f31874ab46fda9, type: 3}
+    - {fileID: 8300000, guid: 7f9860142e843ef4783671b792ca4569, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  hitSound:
+    clips:
+    - {fileID: 8300000, guid: 933ef29f40d100b48bf4e6cf19aa5d75, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  emptySound:
+    clips: []
+    volume: 1
+    pitchVariation: 0.05
+  reloadSound:
+    clips: []
+    volume: 1
+    pitchVariation: 0.05
   equippedPosition: {x: 0, y: -0.15, z: 0}
   equippedRotation: {x: 0, y: 0, z: 0}
   equippedScale: {x: 0.8, y: 0.8, z: 0.8}

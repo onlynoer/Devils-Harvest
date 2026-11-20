@@ -20,10 +20,12 @@ MonoBehaviour:
   - stat: 0
     multiplier: 1.6
   collectSound:
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: 5f189cfa33cdba449befb371f1e3277b, type: 3}
     volume: 1
     pitchVariation: 0.05
   expireSound:
-    clips: []
+    clips:
+    - {fileID: 8300000, guid: 08eb50960c789554e9d4748055ce22bf, type: 3}
     volume: 1
     pitchVariation: 0.05

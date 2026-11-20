@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f13c1a0abaf4c44409673e72365f9f64, type: 3}
   m_Name: StaffData
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
-  weaponName: DefaultStaff
-  weaponPrefab: {fileID: 921770208662558296, guid: 0d58cc23699430d4ea7eda67b668c7dd, type: 3}
+  itemName: DefaultStaff
+  itemPrefab: {fileID: 921770208662558296, guid: 0d58cc23699430d4ea7eda67b668c7dd, type: 3}
+  icon: {fileID: 0}
+  iconRotation: {x: 12, y: -32, z: 0}
   useType: 3
   spawnType: 3
   damage: 20
@@ -21,3 +23,39 @@ MonoBehaviour:
   maxAmmo: 20
   projectilePrefab: {fileID: 0}
   projectileSpeed: 20
+  meleeRange: 2.2
+  meleeRadius: 0.5
+  swingDuration: 0.45
+  swingHitTime: 0.4
+  swingAngle: 100
+  swingTilt: 25
+  swingReach: 0.15
+  equipSound:
+    clips:
+    - {fileID: 8300000, guid: 5d10c5ac27abcba4ebed11ff7266c8d9, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  useSound:
+    clips:
+    - {fileID: 8300000, guid: 2a7c422c3d050194d805a497d2dde95b, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  hitSound:
+    clips: []
+    volume: 1
+    pitchVariation: 0.05
+  emptySound:
+    clips:
+    - {fileID: 8300000, guid: cfbec555e81724044a4c854cc4f9e904, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  reloadSound:
+    clips:
+    - {fileID: 8300000, guid: be18896a1a3916946b30c3626b362add, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  equippedPosition: {x: 0, y: 0, z: 0}
+  equippedRotation: {x: 0, y: 0, z: 0}
+  equippedScale: {x: 1, y: 1, z: 1}
+  legacyWeaponName: 
+  legacyWeaponPrefab: {fileID: 0}
