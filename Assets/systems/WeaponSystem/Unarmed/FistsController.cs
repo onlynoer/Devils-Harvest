@@ -21,6 +21,12 @@ public sealed class FistsController : MonoBehaviour
     [Tooltip("Width of the punch hit area. Bigger = more forgiving aim.")]
     [Min(0f)] [SerializeField] private float radius = .35f;
 
+    [Header("Sounds (play through the SFX volume slider)")]
+    [Tooltip("Each punch thrown (a whoosh).")]
+    [SerializeField] private SoundEffect punchSound = new SoundEffect();
+    [Tooltip("When a punch hits a creature.")]
+    [SerializeField] private SoundEffect punchHitSound = new SoundEffect();
+
     [Header("Timing")]
     [Tooltip("Seconds between punches. Shorter than Punch Duration lets the next fist start while the last returns.")]
     [Min(.05f)] [SerializeField] private float punchInterval = .3f;
@@ -102,6 +108,7 @@ public sealed class FistsController : MonoBehaviour
 
         rightIsNext = fist == left;
         nextPunchTime = Time.time + punchInterval;
+        if (weaponSystem != null) weaponSystem.Audio.Play(punchSound);
         return true;
     }
 
@@ -113,7 +120,7 @@ public sealed class FistsController : MonoBehaviour
         if (!fist.hitDone && t >= hitTime)
         {
             fist.hitDone = true;
-            if (weaponSystem != null) weaponSystem.DealMeleeDamage(range, radius, damage);
+            if (weaponSystem != null) weaponSystem.DealMeleeDamage(range, radius, damage, punchHitSound);
         }
         if (t >= 1f)
         {

@@ -49,6 +49,7 @@ public sealed class CreatureAudio : MonoBehaviour
         voice.maxDistance = data.callDistance;
         voice.dopplerLevel = 0f;
         voice.outputAudioMixerGroup = data.soundGroup;
+        SettingsManager.Route(voice, AudioChannel.SFX); // only if the creature data has no group
         return voice;
     }
 

@@ -60,6 +60,18 @@ public class WeaponData : InventoryItemData
     [Tooltip("How far the model lunges forward mid-slash, in meters.")]
     [Min(0f)] public float swingReach = .15f;
 
+    [Header("Sounds (play through the SFX volume slider)")]
+    [Tooltip("When the weapon is selected on the hotbar.")]
+    public SoundEffect equipSound = new SoundEffect();
+    [Tooltip("Each attack: gunshot, bow release, staff cast, sword swing.")]
+    public SoundEffect useSound = new SoundEffect();
+    [Tooltip("Melee only: when the swing hits a creature.")]
+    public SoundEffect hitSound = new SoundEffect();
+    [Tooltip("Attacking with no ammo left (dry fire click).")]
+    public SoundEffect emptySound = new SoundEffect();
+    [Tooltip("When the weapon is refilled from an ammo box.")]
+    public SoundEffect reloadSound = new SoundEffect();
+
     [Header("Equipped Appearance")]
     [Tooltip("Offset of the model from the Hand, in the Hand's local space (meters). Updates live in Play Mode.")]
     public Vector3 equippedPosition = Vector3.zero;

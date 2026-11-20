@@ -10,6 +10,7 @@ public sealed class IslandMusic : MonoBehaviour
     private IEnumerator Start()
     {
         var source = GetComponent<AudioSource>();
+        SettingsManager.Route(source, AudioChannel.Music);
         float level = source.volume;
         source.volume = 0f;
         source.Play();

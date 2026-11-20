@@ -1,6 +1,5 @@
 
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -16,6 +15,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private AudioSource footfall;
     private float stepTravel;
     private Animator animator;
+    private PlayerPowerups powerups;
     private Vector3 velocity;
 
     private bool isGrounded;
@@ -43,6 +43,7 @@ public class PlayerMovement : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
+        powerups = PlayerPowerups.For(gameObject);
     }
 
     void Update()
@@ -51,10 +52,11 @@ public class PlayerMovement : MonoBehaviour
         float x = 0f;
         float z = 0f;
 
-        if (Keyboard.current.aKey.isPressed) x = -1f;
-        if (Keyboard.current.dKey.isPressed) x = 1f;
-        if (Keyboard.current.wKey.isPressed) z = 1f;
-        if (Keyboard.current.sKey.isPressed) z = -1f;
+        // Keys come from the Controls settings (GameInput), so players can rebind them.
+        if (GameInput.IsHeld(GameAction.MoveLeft)) x = -1f;
+        if (GameInput.IsHeld(GameAction.MoveRight)) x = 1f;
+        if (GameInput.IsHeld(GameAction.MoveForward)) z = 1f;
+        if (GameInput.IsHeld(GameAction.MoveBack)) z = -1f;
 
         bool isWalking = x != 0f || z != 0f;
         animator.SetBool("isWalking", isWalking);
@@ -63,10 +65,7 @@ public class PlayerMovement : MonoBehaviour
         movement = Vector3.ClampMagnitude(movement, 1f);
 
         // Sprint
-        IsSprinting =
-            (Keyboard.current.leftShiftKey.isPressed ||
-             Keyboard.current.rightShiftKey.isPressed)
-            && isWalking;
+        bool isSprinting = GameInput.IsHeld(GameAction.Sprint) && isWalking;
 
         float currentSpeed = player.playerData.speed;
 
@@ -74,6 +73,8 @@ public class PlayerMovement : MonoBehaviour
         {
             currentSpeed *= sprintMultiplier;
         }
+
+        currentSpeed *= powerups.GetMultiplier(PowerupStat.MoveSpeed);
 
         // Gravity
         if (isGrounded && velocity.y < 0)
@@ -84,9 +85,10 @@ public class PlayerMovement : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
 
         // Jump
-        if (Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded)
+        if (GameInput.WasPressed(GameAction.Jump) && isGrounded)
         {
-            velocity.y = jumpForce;
+            // Jump height grows with the square of take-off speed, so a x2 Jump Height powerup uses sqrt(2) here.
+            velocity.y = jumpForce * Mathf.Sqrt(powerups.GetMultiplier(PowerupStat.JumpHeight));
             animator.SetBool("isJumping", true);
         }
 
