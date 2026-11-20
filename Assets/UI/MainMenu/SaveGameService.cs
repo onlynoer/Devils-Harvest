@@ -14,6 +14,8 @@ public sealed class SaveProgress
     public int harvestedItems;
     public int meat;
     public int meatOffered;
+    public float firstDayElapsed;
+    public int firstQuotaResult; // 0 active, 1 met, 2 expired
     public string equippedDealerId;
     public List<DealerWeaponSave> dealerWeapons = new List<DealerWeaponSave>();
     // Game systems can serialize additional versioned progress here without changing this save format.

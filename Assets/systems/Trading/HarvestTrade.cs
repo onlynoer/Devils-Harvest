@@ -7,6 +7,7 @@ public sealed class HarvestTrade : MonoBehaviour
     public DevilDealer dealer;
     public DealerShopView shop;
     private SaveProgress progress;
+    private FirstQuotaDay quota;
     private WeaponSystem weapons;
     private Player player;
     private PlayerMovement movement;
@@ -26,6 +27,8 @@ public sealed class HarvestTrade : MonoBehaviour
         movement = GetComponent<PlayerMovement>();
         look = weapons.playerCamera.GetComponent<FirstPersonLook>();
         progress = SaveGameService.ActiveSave?.progress ?? new SaveProgress();
+        quota = GetComponent<FirstQuotaDay>();
+        if (quota != null) quota.Bind(progress);
         if (progress.dealerWeapons == null) progress.dealerWeapons = new List<DealerWeaponSave>();
     }
 
@@ -93,14 +96,19 @@ public sealed class HarvestTrade : MonoBehaviour
         SaveGameService.SaveActive();
     }
 
-    public string AltarPrompt => (Meat > 0 ? "offer 1 meat\n" : "") +
-        "Meat carried: " + Meat + "   |   Offered: " + progress.meatOffered;
+    public bool CanOffer => Meat > 0 && (quota == null || quota.Accepting);
+
+    public string AltarPrompt => (CanOffer ? "offer 1 meat\n" : "") +
+        "Meat carried: " + Meat + "   |   Offered: " + progress.meatOffered +
+        (quota == null ? "" : quota.Accepting ? "   |   Still due: " + quota.Remaining :
+            progress.firstQuotaResult == 1 ? "   |   Quota met" : "   |   Deadline passed");
 
     public void OfferMeat()
     {
-        if (Meat <= 0) return;
+        if (!CanOffer) return;
         progress.meat--;
         progress.meatOffered++;
+        if (quota != null) quota.Evaluate();
         SaveGameService.SaveActive();
     }
 
