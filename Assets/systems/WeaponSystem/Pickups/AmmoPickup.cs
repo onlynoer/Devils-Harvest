@@ -38,6 +38,7 @@ public class AmmoPickup : MonoBehaviour, IInteractable
     {
         if (!CanInteract(user)) return;
         user.Inventory.Selected.Refill();
+        user.Audio.Play(user.Inventory.Selected.Definition.reloadSound);
         gameObject.SetActive(false);
     }
 }

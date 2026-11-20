@@ -108,7 +108,7 @@ public sealed class HarvestTrade : MonoBehaviour
     {
         if (!IsOpen || Time.frameCount == openedFrame) return;
         var keyboard = Keyboard.current;
-        if (player.IsDead || (keyboard != null && (keyboard.escapeKey.wasPressedThisFrame || keyboard.eKey.wasPressedThisFrame)))
+        if (player.IsDead || (keyboard != null && keyboard.escapeKey.wasPressedThisFrame) || GameInput.WasPressed(GameAction.Interact))
             Close();
     }
 
@@ -124,6 +124,7 @@ public sealed class HarvestTrade : MonoBehaviour
         if (IsOpen || player.IsDead) return;
         openedFrame = Time.frameCount;
         IsOpen = true;
+        GamePause.OverlayOpened(); // Escape closes the shop instead of opening the pause menu
         previousLock = Cursor.lockState;
         previousCursor = Cursor.visible;
         restoreMovement = movement.enabled;
@@ -139,6 +140,7 @@ public sealed class HarvestTrade : MonoBehaviour
     {
         if (!IsOpen) return;
         IsOpen = false;
+        GamePause.OverlayClosed();
         shop.gameObject.SetActive(false);
         movement.enabled = restoreMovement && !player.IsDead;
         look.enabled = restoreLook;

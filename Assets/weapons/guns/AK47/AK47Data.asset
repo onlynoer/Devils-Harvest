@@ -30,6 +30,26 @@ MonoBehaviour:
   swingAngle: 100
   swingTilt: 25
   swingReach: 0.15
+  equipSound:
+    clips: []
+    volume: 1
+    pitchVariation: 0.05
+  useSound:
+    clips: []
+    volume: 1
+    pitchVariation: 0.05
+  hitSound:
+    clips: []
+    volume: 1
+    pitchVariation: 0.05
+  emptySound:
+    clips: []
+    volume: 1
+    pitchVariation: 0.05
+  reloadSound:
+    clips: []
+    volume: 1
+    pitchVariation: 0.05
   equippedPosition: {x: 0, y: 0, z: 0}
   equippedRotation: {x: 0, y: 0, z: 0}
   equippedScale: {x: 2, y: 2, z: 2}

@@ -26,6 +26,9 @@ public class OptionsMenuController : MonoBehaviour
     private UnityEngine.Events.UnityAction<float>[] volumeCallbacks;
     private UnityEngine.Events.UnityAction closeCallback;
 
+    /// <summary>Raised when the panel's close/back button is used. The pause menu listens to this.</summary>
+    public event System.Action Closed;
+
     private void OnEnable() => Initialize();
 
     public void Initialize()
@@ -131,7 +134,9 @@ public class OptionsMenuController : MonoBehaviour
     public void CloseMenu()
     {
         if (settingsManager != null) settingsManager.SavePreferences();
+        GameInput.CancelRebind();
         if (menuManager != null) menuManager.CloseSettings();
+        Closed?.Invoke();
     }
 
     private void SetVolume(int index, float value)
@@ -163,6 +168,7 @@ public class OptionsMenuController : MonoBehaviour
 
     private void OnDisable()
     {
+        GameInput.CancelRebind();
         UnbindControls();
         if (settingsManager != null) settingsManager.SavePreferences();
     }

@@ -23,6 +23,8 @@ Handles everything the player can carry and attack with: the hotbar inventory, p
 |---|---|---|
 | `Core/` | `WeaponSystem.cs` | Player component. Input, pickup/drop, hand model, firing. |
 | `Core/` | `MeleeSwing.cs` | Swing animation done in code for melee weapons (used by `WeaponSystem`). |
+| `Core/` | `WeaponAudio.cs` | Player component (added automatically). Plays weapon sounds through the SFX mixer group. |
+| `Core/` | `SoundEffect.cs` | One sound slot: random clip from a list, volume, pitch variation. |
 | `Core/` | `WeaponData.cs` | Weapon asset: type, damage, cooldown, ammo, projectile, hand pose. Also the `WeaponUseType` / `WeaponSpawnType` enums. |
 | `Inventory/` | `InventoryItemData.cs` | Base asset for any carryable item: name, model prefab, HUD icon. `WeaponData` extends it. |
 | `Inventory/` | `WeaponInventory.cs` | Player component. Hotbar slots (max 9), selection, add/remove. |
@@ -111,6 +113,17 @@ Raise **Reach** on FistsController for longer, stretchier punches. **Range** the
 - **Camera Near Clip Plane** set to 0.05, so close-up hands aren't sliced.
 
 **FirstPersonArmsIK** has the shadow's hand rotation, elbow bend and blend time.
+
+### Sound effects
+All weapon sounds play through `WeaponAudio` on the player, which sends them to the **SFX** mixer group. The **SFX** and **Master** sliders in Settings control them, and they pause with the game. Each sound slot takes a list of clips, and one is picked at random each time. Leave the list empty for silence.
+- **Weapons** (WeaponData asset ▸ *Sounds*):
+  - **Equip:** plays when the weapon is selected.
+  - **Use:** plays on each attack: gunshot, bow release, staff cast or sword swing.
+  - **Hit:** melee only; plays where the swing lands on a creature.
+  - **Empty:** plays when attacking with no ammo.
+  - **Reload:** plays when an ammo box refills the weapon.
+- **Fists** (`Fists` object ▸ FistsController ▸ *Sounds*): **Punch** plays on every punch, and **Punch Hit** plays when a punch connects.
+- **Sounds from other scripts:** call `weaponSystem.Audio.Play(sound)` for a sound on the player, or `weaponSystem.Audio.PlayAt(sound, position)` for a sound in the world.
 
 ### Place a weapon pickup in a level
 1. Drag the weapon's model into the scene.

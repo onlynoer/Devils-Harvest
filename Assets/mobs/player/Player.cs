@@ -110,6 +110,7 @@ public class Player : MonoBehaviour
         }
 
         isDead = true;
+        if (TryGetComponent(out PlayerPowerups powerups)) powerups.ClearAll();
         if (TryGetComponent(out WeaponSystem weapons))
         {
             resumeWeapons = weapons.enabled;

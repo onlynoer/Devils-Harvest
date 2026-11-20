@@ -18,8 +18,9 @@ public class FirstPersonLook : MonoBehaviour
     {
         Vector2 mouseInput = Mouse.current.delta.ReadValue();
 
-        float mouseX = mouseInput.x * mouseSensitivity * Time.deltaTime;
-        float mouseY = mouseInput.y * mouseSensitivity * Time.deltaTime;
+        // Horizontal/Vertical sensitivity are the player's settings from the Controls page (1 = default).
+        float mouseX = mouseInput.x * mouseSensitivity * ControlSettings.HorizontalSensitivity * Time.deltaTime;
+        float mouseY = mouseInput.y * mouseSensitivity * ControlSettings.VerticalSensitivity * Time.deltaTime;
 
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 70f); // limit vertical rotation 70 degrees down and 90 degrees up

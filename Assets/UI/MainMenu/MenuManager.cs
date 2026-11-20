@@ -14,6 +14,9 @@ public class MenuManager : MonoBehaviour
 
     private void Awake()
     {
+        // Coming back from gameplay (pause menu, death, etc.) can leave the cursor locked and hidden.
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
         if (openSettingsButton != null)
         {
             openSettingsButton.onClick.RemoveListener(OpenSettings);
