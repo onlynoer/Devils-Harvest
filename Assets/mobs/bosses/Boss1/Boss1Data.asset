@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea14a54f066d42c458dee29c2e52c929, type: 3}
+  m_Name: Boss1Data
+  m_EditorClassIdentifier: Assembly-CSharp::CreatureData
+  creatureName: Boss1
+  maxHealth: 200
+  damage: 20
+  defense: 10
+  movementSpeed: 1
+  attackRange: 2
+  attackCooldown: 1
+  attackDuration: 1.2
+  attackHitDelay: 0.5
+  soundGroup: {fileID: -4977106688278979857, guid: ca4ef1971e20ed643943dd66e7230c21, type: 2}
+  call: {fileID: 8300000, guid: fdf42d72491937a4bbeac0fcb76894bb, type: 3}
+  step: {fileID: 8300000, guid: 7a7c0e16921f25647addfb068419c588, type: 3}
+  hurt: {fileID: 8300000, guid: bff34f72ccf42b045a70239f68d81a56, type: 3}
+  death: {fileID: 8300000, guid: 5309f40ea6672b14fa9e9c27f4a78030, type: 3}
+  warning: {fileID: 8300000, guid: f0bfe12416f08db41b4b7409f8702afc, type: 3}
+  attack: {fileID: 8300000, guid: a46271f9c3aaa65409b6f43a0ca18ba9, type: 3}
+  callDistance: 42
+  stepDistance: 23
+  stride: 1
+  lootAmount: 15
+  meatDrop: {fileID: 7976972406836098625, guid: c21f79de00e5ad448825565c2b805ebc, type: 3}
+  damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
+  damageFlashDuration: 0.15

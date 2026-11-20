@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea14a54f066d42c458dee29c2e52c929, type: 3}
+  m_Name: miniRedDevilData
+  m_EditorClassIdentifier: Assembly-CSharp::CreatureData
+  creatureName: Mini Red Devil
+  maxHealth: 100
+  damage: 10
+  defense: 0
+  movementSpeed: 5
+  attackRange: 2
+  attackCooldown: 1
+  attackDuration: 1.2
+  attackHitDelay: 0.5
+  soundGroup: {fileID: -4977106688278979857, guid: ca4ef1971e20ed643943dd66e7230c21, type: 2}
+  call: {fileID: 8300000, guid: fdf42d72491937a4bbeac0fcb76894bb, type: 3}
+  step: {fileID: 8300000, guid: a237814d296be7a47b6dd3c5fd4073af, type: 3}
+  hurt: {fileID: 8300000, guid: bff34f72ccf42b045a70239f68d81a56, type: 3}
+  death: {fileID: 8300000, guid: 5309f40ea6672b14fa9e9c27f4a78030, type: 3}
+  warning: {fileID: 0}
+  attack: {fileID: 0}
+  callDistance: 24
+  stepDistance: 12
+  stride: 0.8
+  lootAmount: 5
+  meatDrop: {fileID: 7976972406836098625, guid: c21f79de00e5ad448825565c2b805ebc, type: 3}
+  damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
+  damageFlashDuration: 0.15

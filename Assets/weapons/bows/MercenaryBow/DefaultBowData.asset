@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13c1a0abaf4c44409673e72365f9f64, type: 3}
+  m_Name: DefaultBowData
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  itemName: Bow
+  itemPrefab: {fileID: 5689215608645113600, guid: 6d826ac466fcafb49879a5e5a942e557, type: 3}
+  icon: {fileID: 0}
+  iconRotation: {x: 12, y: -32, z: 0}
+  useType: 1
+  spawnType: 1
+  damage: 10
+  cooldown: 0.5
+  maxAmmo: 30
+  projectilePrefab: {fileID: 5305345980619666261, guid: ad4268200d1864044a7514ca4fa8f6da, type: 3}
+  projectileSpeed: 50
+  meleeRange: 2.2
+  meleeRadius: 0.5
+  swingDuration: 0.45
+  swingHitTime: 0.4
+  swingAngle: 100
+  swingTilt: 25
+  swingReach: 0.15
+  equipSound:
+    clips:
+    - {fileID: 8300000, guid: 5d10c5ac27abcba4ebed11ff7266c8d9, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  useSound:
+    clips:
+    - {fileID: 8300000, guid: 012c668b0ecee1d4db9062e328785c72, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  hitSound:
+    clips: []
+    volume: 1
+    pitchVariation: 0.05
+  emptySound:
+    clips:
+    - {fileID: 8300000, guid: 5bf6bbe6abd61b4468c79d701ecec29e, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  reloadSound:
+    clips:
+    - {fileID: 8300000, guid: 9009bf2f6e4fbe44489fd0090be49e0b, type: 3}
+    volume: 1
+    pitchVariation: 0.05
+  equippedPosition: {x: 0, y: 0, z: 0}
+  equippedRotation: {x: 0, y: 0, z: 0}
+  equippedScale: {x: 2, y: 1.7, z: 1.3}
+  legacyWeaponName: 
+  legacyWeaponPrefab: {fileID: 0}

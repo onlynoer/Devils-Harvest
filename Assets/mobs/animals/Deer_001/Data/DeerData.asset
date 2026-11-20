@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea14a54f066d42c458dee29c2e52c929, type: 3}
+  m_Name: DeerData
+  m_EditorClassIdentifier: Assembly-CSharp::CreatureData
+  creatureName: Deer
+  maxHealth: 100
+  damage: 0
+  defense: 0
+  movementSpeed: 3
+  attackRange: 0
+  attackCooldown: 0
+  attackDuration: 0
+  attackHitDelay: 0
+  soundGroup: {fileID: -4977106688278979857, guid: ca4ef1971e20ed643943dd66e7230c21, type: 2}
+  call: {fileID: 8300000, guid: 21db2424a5a635b4f959e59662b8bed6, type: 3}
+  step: {fileID: 8300000, guid: 1f6bbb3a28de52b4599a9f41387db71e, type: 3}
+  hurt: {fileID: 8300000, guid: e023688dd63382344afb50c798f9ee82, type: 3}
+  death: {fileID: 8300000, guid: 08b23493863dd204e8d85d61326a9c01, type: 3}
+  warning: {fileID: 0}
+  attack: {fileID: 0}
+  callDistance: 52
+  stepDistance: 17
+  stride: 0.47
+  lootAmount: 5
+  meatDrop: {fileID: 7976972406836098625, guid: c21f79de00e5ad448825565c2b805ebc, type: 3}
+  damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
+  damageFlashDuration: 0.15

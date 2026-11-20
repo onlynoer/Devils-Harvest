@@ -12,8 +12,22 @@ public sealed class SaveProgress
     public string startingLevelId = "main-level";
     public int day = 1;
     public int harvestedItems;
+    public int meat;
+    public int meatOffered;
+    public float firstDayElapsed;
+    public int firstQuotaResult; // 0 active, 1 met, 2 expired
+    public string equippedDealerId;
+    public List<DealerWeaponSave> dealerWeapons = new List<DealerWeaponSave>();
     // Game systems can serialize additional versioned progress here without changing this save format.
     public string customData = "{}";
+}
+
+[Serializable]
+public sealed class DealerWeaponSave
+{
+    public string id;
+    public int ammo;
+    public bool dropped;
 }
 
 /// <summary>Serializable save record for one named world.</summary>
@@ -115,9 +129,12 @@ public static class SaveGameService
         return true;
     }
 
+    public static event Action<SaveProgress> BeforeSave;
+
     public static void SaveActive()
     {
         if (activeSave == null) return;
+        BeforeSave?.Invoke(activeSave.progress);
         activeSave.lastPlayedUtc = DateTime.UtcNow.ToString("o");
         Write(activeSave);
     }

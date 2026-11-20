@@ -26,6 +26,12 @@ public class UIAudioManager : MonoBehaviour
             return;
         }
         Instance = this;
+        if (audioSource != null) audioSource.ignoreListenerPause = true; // menu clicks still play while paused
+    }
+
+    private void Start()
+    {
+        if (audioSource != null) SettingsManager.Route(audioSource, AudioChannel.UI);
     }
 
     public void PlayHoverSound()
