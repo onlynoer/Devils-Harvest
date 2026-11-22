@@ -15,6 +15,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private AudioSource footfall;
     private float stepTravel;
     private Animator animator;
+    private WeaponSystem weapons;
     private PlayerPowerups powerups;
     private Vector3 velocity;
 
@@ -44,6 +45,7 @@ public class PlayerMovement : MonoBehaviour
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
         powerups = PlayerPowerups.For(gameObject);
+        weapons = GetComponent<WeaponSystem>();
     }
 
     void Update()
@@ -65,7 +67,7 @@ public class PlayerMovement : MonoBehaviour
         movement = Vector3.ClampMagnitude(movement, 1f);
 
         // Sprint
-        bool isSprinting = GameInput.IsHeld(GameAction.Sprint) && isWalking;
+        IsSprinting = isWalking && GameInput.IsHeld(GameAction.Sprint) && (weapons == null || !weapons.IsAiming);
 
         float currentSpeed = player.playerData.speed;
 

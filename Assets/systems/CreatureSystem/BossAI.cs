@@ -43,11 +43,22 @@ public class BossAI : MonoBehaviour
     private float verticalVelocity;
 
     private Vector3 wanderDirection;
+    private Vector3 home;
+    private float woundedUntil;
+    public Transform attackVisual;
+    private Quaternion restPose;
+
+    public void AlertToHit()
+    {
+        woundedUntil = Time.time + 5f;
+    }
 
     void Start()
     {
         if (player == null) player = FindAnyObjectByType<Player>();
         creature = GetComponent<Creature>();
+        home = transform.position;
+        if (attackVisual != null) restPose = attackVisual.localRotation;
         StartIdle();
     }
 
@@ -64,7 +75,7 @@ public class BossAI : MonoBehaviour
         );
 
         // Check whether the player is nearby.
-        if (distance <= detectionRange)
+        if (distance <= detectionRange || Time.time < woundedUntil)
         {
             if (!isChasing && creature != null && creature.Sounds != null)
                 creature.Sounds.Signal(creature.creatureData.warning);
@@ -119,6 +130,8 @@ public class BossAI : MonoBehaviour
 
         if (isWalking)
         {
+            var back = Vector3.ProjectOnPlane(home - transform.position, Vector3.up);
+            if (back.sqrMagnitude > 36f) wanderDirection = back.normalized;
             Move(wanderDirection, walkSpeed);
             animator.SetFloat("Speed", 0.5f);
         }
@@ -250,7 +263,14 @@ public class BossAI : MonoBehaviour
     {
         attackTimer += Time.deltaTime;
 
-        FacePlayer();
+        // Hold the facing chosen at windup. Stepping aside evades the committed swing.
+        if (attackVisual != null)
+        {
+            float tilt = attackTimer < attackHitDelay
+                ? -16f * Mathf.Sin(Mathf.PI * .5f * attackTimer / attackHitDelay)
+                : 13f * Mathf.Sin(Mathf.PI * Mathf.Clamp01((attackTimer - attackHitDelay) / .48f));
+            attackVisual.localRotation = restPose * Quaternion.Euler(tilt, 0f, 0f);
+        }
 
         if (!hasHitPlayer && attackTimer >= attackHitDelay)
         {
@@ -259,7 +279,7 @@ public class BossAI : MonoBehaviour
                 player.transform.position
             );
 
-            if (distance <= attackRange + 0.3f)
+            if (distance <= attackRange + 0.3f && Vector3.Angle(transform.forward, Vector3.ProjectOnPlane(player.transform.position - transform.position, Vector3.up)) <= 64f)
                 player.TakeDamage(attackDamage);
 
             hasHitPlayer = true;
@@ -268,6 +288,7 @@ public class BossAI : MonoBehaviour
         if (attackTimer >= attackDuration)
         {
             isAttacking = false;
+            if (attackVisual != null) attackVisual.localRotation = restPose;
 
             animator.SetBool("IsAttacking", false);
 

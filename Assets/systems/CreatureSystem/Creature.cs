@@ -66,6 +66,7 @@ public class Creature : MonoBehaviour
         {
             monsterAI.Provoke();
         }
+        if (currentHealth > 0f && actualDamage > 0f && TryGetComponent(out BossAI boss)) boss.AlertToHit();
         currentHealth = Mathf.Max(currentHealth, 0f);
 
         CreatureAI ai = GetComponent<CreatureAI>();
@@ -143,7 +144,13 @@ public class Creature : MonoBehaviour
 
     private IEnumerator Fall()
     {
-        var animator = GetComponentInChildren<Animator>();
+        var skin = GetComponentInChildren<SkinnedMeshRenderer>();
+        var animator = skin != null && skin.rootBone != null ? skin.rootBone.GetComponentInParent<Animator>() : null;
+        // Imported island monsters have an outer gameplay Animator and an inner model rig.
+        // The death clip paths start at the model, so give only that Animator the pose.
+        foreach (var other in GetComponentsInChildren<Animator>())
+            if (other != animator || deathClip == null) other.enabled = false;
+        float duration = .8f;
         if (animator != null && deathClip != null)
         {
             animator.applyRootMotion = false;
@@ -152,22 +159,20 @@ public class Creature : MonoBehaviour
             var clip = AnimationClipPlayable.Create(deathGraph, deathClip);
             var output = AnimationPlayableOutput.Create(deathGraph, "Death", animator);
             output.SetSourcePlayable(clip);
+            duration = Mathf.Clamp(deathClip.length, .52f, 1.15f);
+            clip.SetSpeed(deathClip.length / duration);
             deathGraph.Play();
-            yield return new WaitForSeconds(deathClip.length);
         }
-        else
+        // Tip around the grounded root immediately, including clips with a long upright lead-in.
+        var upright = transform.rotation;
+        var fallen = upright * Quaternion.Euler(4f, 0f, 82f);
+        for (float t = 0f; t < .45f; t += Time.deltaTime)
         {
-            if (animator != null) animator.enabled = false;
-            var upright = transform.rotation;
-            var fallen = upright * Quaternion.Euler(4f, 0f, 78f);
-            for (float t = 0f; t < .52f; t += Time.deltaTime)
-            {
-                transform.rotation = Quaternion.Slerp(upright, fallen, Mathf.SmoothStep(0f, 1f, t / .52f));
-                yield return null;
-            }
-            transform.rotation = fallen;
-            yield return new WaitForSeconds(.28f);
+            transform.rotation = Quaternion.Slerp(upright, fallen, Mathf.SmoothStep(0f, 1f, t / .45f));
+            yield return null;
         }
+        transform.rotation = fallen;
+        yield return new WaitForSeconds(duration - .45f);
         Destroy(gameObject);
     }
 

@@ -181,7 +181,7 @@ public sealed partial class HarvestReview
         world.firstDayElapsed = 479.95f;
         yield return Frames(5);
         Check(world.firstQuotaResult == 2 && !quota.ReadyToOffer, "end of day closes offering");
-        var caster = Object.FindAnyObjectByType<FireShooterAI>();
+        var caster = Object.FindObjectsByType<FireShooterAI>().Single(c => c.name == "Monster38_01");
         var hostile = caster.GetComponent<Creature>();
         yield return Approach(hostile, 7);
         float health = p.CurrentHealth;

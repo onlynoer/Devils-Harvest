@@ -12,6 +12,9 @@ public class FireShooterAI : MonoBehaviour
     public float detectionRange = 12f;
     public float loseTargetRange = 18f;
     public float shootingRange = 10f;
+    [Tooltip("Guard this position and break pursuit beyond the posted radius. Zero allows roaming.")]
+    public float guardRadius;
+    private Vector3 home;
 
     [Header("Fireball")]
     public GameObject fireballPrefab;
@@ -60,6 +63,7 @@ public class FireShooterAI : MonoBehaviour
     void Start()
     {
         if (player == null) player = FindAnyObjectByType<Player>();
+        home = transform.position;
         SetCasting(false);
         StartIdle();
     }
@@ -73,6 +77,16 @@ public class FireShooterAI : MonoBehaviour
             transform.position,
             player.transform.position
         );
+
+        var toPost = Vector3.ProjectOnPlane(home - transform.position, Vector3.up);
+        if (guardRadius > 0f && (toPost.magnitude > guardRadius || Vector3.Distance(home, player.transform.position) > guardRadius + detectionRange))
+        {
+            isAggressive = false;
+            SetCasting(false);
+            if (toPost.sqrMagnitude > 1f) Move(toPost.normalized, walkSpeed);
+            else StopMoving();
+            return;
+        }
 
         if (!isAggressive && distance <= detectionRange)
         {
@@ -136,6 +150,8 @@ public class FireShooterAI : MonoBehaviour
 
         if (isWalking)
         {
+            var back = Vector3.ProjectOnPlane(home - transform.position, Vector3.up);
+            if (back.sqrMagnitude > 25f) wanderDirection = back.normalized;
             Move(wanderDirection, walkSpeed);
             animator.SetFloat("Speed", 0.5f);
         }

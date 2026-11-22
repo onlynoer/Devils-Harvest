@@ -40,10 +40,13 @@ public class MonsterAI : MonoBehaviour
     private float verticalVelocity;
 
     private Vector3 wanderDirection;
+    private Vector3 home;
+    private Vector3 lungeDirection;
 
     void Start()
     {
         if (player == null) player = FindAnyObjectByType<Player>();
+        home = transform.position;
         StartIdle();
     }
 
@@ -77,7 +80,6 @@ public class MonsterAI : MonoBehaviour
         if (isAttacking)
         {
             UpdateAttack();
-            ApplyGravity();
             return;
         }
 
@@ -126,6 +128,8 @@ public class MonsterAI : MonoBehaviour
 
         if (isWalking)
         {
+            var back = Vector3.ProjectOnPlane(home - transform.position, Vector3.up);
+            if (back.sqrMagnitude > 36f) wanderDirection = back.normalized;
             Move(wanderDirection, walkSpeed);
             animator.SetFloat("Speed", 0.5f);
         }
@@ -239,6 +243,7 @@ public class MonsterAI : MonoBehaviour
         isAttacking = true;
         hasHitPlayer = false;
         attackTimer = 0f;
+        lungeDirection = Vector3.ProjectOnPlane(player.transform.position-transform.position,Vector3.up).normalized;
 
         animator.SetBool("IsAttacking", true);
     }
@@ -247,7 +252,10 @@ public class MonsterAI : MonoBehaviour
     {
         attackTimer += Time.deltaTime;
 
-        FacePlayer();
+        // Commit to a short straight lunge after the tell. Misses leave the same recovery window.
+        if (attackTimer >= attackHitDelay - .18f && attackTimer < attackHitDelay + .05f)
+            Move(lungeDirection, runSpeed);
+        else ApplyGravity();
 
         if (!hasHitPlayer && attackTimer >= attackHitDelay)
         {
@@ -256,7 +264,7 @@ public class MonsterAI : MonoBehaviour
                 player.transform.position
             );
 
-            if (distance <= attackRange + 0.3f)
+            if (distance <= attackRange + .3f && Vector3.Dot(lungeDirection, Vector3.ProjectOnPlane(player.transform.position-transform.position,Vector3.up).normalized) > .4f)
                 player.TakeDamage(attackDamage);
 
             hasHitPlayer = true;

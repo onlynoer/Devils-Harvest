@@ -18,6 +18,7 @@ using Object = UnityEngine.Object;
 public sealed partial class HarvestReview : MonoBehaviour
 {
     private static string save;
+    private static string routeMode;
     private static Keyboard kb;
     private static Mouse mouse;
     private static Player p;
@@ -34,6 +35,7 @@ public sealed partial class HarvestReview : MonoBehaviour
         int index = Array.IndexOf(args, "-dh-review");
         if (index < 0 || index + 1 >= args.Length)
             return;
+        routeMode = args[index + 1];
         var runner = new GameObject("Windows acceptance replay").AddComponent<HarvestReview>();
         DontDestroyOnLoad(runner.gameObject);
         runner.StartCoroutine(runner.Run(args[index + 1] == "mechanics"));
@@ -483,6 +485,11 @@ public sealed partial class HarvestReview : MonoBehaviour
         yield return Target(ak);
         yield return Press(Key.E);
         Check(gun.LoadedAmmo == 150, "first day beach AK");
+        if (routeMode == "trail")
+        {
+            yield return IslandTrail();
+            yield break;
+        }
         if (after)
         {
             yield return Mechanics();
@@ -496,8 +503,6 @@ public sealed partial class HarvestReview : MonoBehaviour
             yield return Walk(wp);
             if (wp == new Vector2(326, 153))
                 yield return VisitCache("tidewatch", wp);
-            if (wp == new Vector2(369, 244))
-                yield return VisitCache("trapper", wp);
             if (hunts >= 3)
                 continue;
             var eye = gun.playerCamera.transform.position;

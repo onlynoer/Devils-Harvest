@@ -26,6 +26,7 @@ public sealed class PowerupPickup : MonoBehaviour
     public PowerupData Powerup => powerup;
     [Tooltip("Stable save key for a one-use exploration reward.")]
     public string cacheId;
+    [Min(0)] public int cachedMeat;
 
     private void Start()
     {
@@ -80,6 +81,7 @@ public sealed class PowerupPickup : MonoBehaviour
             if (progress.exploredCaches == null) progress.exploredCaches = new System.Collections.Generic.List<string>();
             if (progress.exploredCaches.Contains(cacheId)) return;
             progress.exploredCaches.Add(cacheId);
+            progress.meat += cachedMeat;
         }
         PlayerPowerups.For(player.gameObject).Apply(powerup);
         if (!string.IsNullOrEmpty(cacheId))
