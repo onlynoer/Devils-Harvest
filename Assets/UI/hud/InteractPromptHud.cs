@@ -14,17 +14,30 @@ public sealed class InteractPromptHud : MonoBehaviour
     [SerializeField] private TMP_Text label;
 
     [Header("Text")]
-    [Tooltip("{0} is replaced by the action, e.g. 'pick up AK47'.")]
-    [SerializeField] private string promptFormat = "Press E to {0}";
     [SerializeField] private Color availableColor = Color.white;
     [Tooltip("Color when the action isn't possible right now (inventory full, ammo full...).")]
     [SerializeField] private Color blockedColor = new Color(1f, .62f, .5f);
 
     private string lastAction;
+    private string binding;
+    private bool lastNearby;
+
+    private void OnEnable()
+    {
+        RefreshBinding();
+        GameInput.BindingsChanged += RefreshBinding;
+    }
+
+    private void RefreshBinding()
+    {
+        binding = GameInput.GetBindingText(GameAction.Interact);
+        lastAction = null;
+    }
     private bool lastCanInteract;
 
     private void OnDisable()
     {
+        GameInput.BindingsChanged -= RefreshBinding;
         if (panel != null) panel.SetActive(false);
         lastAction = null;
     }
@@ -32,7 +45,11 @@ public sealed class InteractPromptHud : MonoBehaviour
     private void LateUpdate()
     {
         IInteractable target = weaponSystem != null && weaponSystem.isActiveAndEnabled ? weaponSystem.CurrentInteractable : null;
-        string action = target != null ? target.GetPrompt(weaponSystem) : null;
+        bool hint = target == null;
+        if (hint && weaponSystem != null && weaponSystem.isActiveAndEnabled) target = weaponSystem.NearbyInteraction;
+        if (!(target is Behaviour component) || component == null || !component.isActiveAndEnabled || !GameInput.GameplayEnabled)
+            target = null;
+        string action = target?.GetPrompt(weaponSystem);
 
         bool show = !string.IsNullOrEmpty(action);
         if (panel != null && panel.activeSelf != show) panel.SetActive(show);
@@ -43,10 +60,18 @@ public sealed class InteractPromptHud : MonoBehaviour
         }
 
         bool canInteract = target.CanInteract(weaponSystem);
-        if (ReferenceEquals(action, lastAction) && canInteract == lastCanInteract) return;
+        if (action == lastAction && canInteract == lastCanInteract && hint == lastNearby) return;
+        lastNearby = hint;
         lastAction = action;
         lastCanInteract = canInteract;
-        label.text = canInteract ? string.Format(promptFormat, action) : action;
+        if (hint)
+        {
+            string description = target is MeatPickup ? "Dropped meat" :
+                target is WeaponPickup pickup && pickup.Definition != null ? pickup.Definition.DisplayName :
+                target is AltarOffering ? "Offering altar" : target is DevilDealer ? "Devil Dealer" : "Ammo";
+            label.text = description + " nearby  /  Look toward it";
+        }
+        else label.text = canInteract ? "[" + binding + "]  " + action : action;
         label.color = canInteract ? availableColor : blockedColor;
     }
 }

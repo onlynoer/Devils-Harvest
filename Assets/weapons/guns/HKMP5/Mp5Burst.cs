@@ -19,12 +19,11 @@ public sealed class Mp5Burst : MonoBehaviour
 
         // Preserve the controller's muzzle-to-reticle convergence and follow the
         // player's view through the burst. The trigger round already spent its ammo.
-        var aim = weapons.playerCamera.transform.InverseTransformDirection(transform.forward);
-        weapons.StartCoroutine(FinishBurst(player, weapons, slot, followUpProjectile, aim, GetComponent<Projectile>().damage));
+        weapons.StartCoroutine(FinishBurst(player, weapons, slot, followUpProjectile, GetComponent<Projectile>().damage));
     }
 
     private static IEnumerator FinishBurst(Player player, WeaponSystem weapons, WeaponInstance slot,
-        GameObject projectilePrefab, Vector3 localAim, float damage)
+        GameObject projectilePrefab, float damage)
     {
         float next = Time.time + RoundInterval;
         for (int round = 0; round < 2; round++)
@@ -35,11 +34,13 @@ public sealed class Mp5Burst : MonoBehaviour
                 yield return null;
             }
             if (player.IsDead || !weapons.isActiveAndEnabled || weapons.Inventory.Selected != slot || slot.LoadedAmmo == 0) yield break;
-            var direction = weapons.playerCamera.transform.TransformDirection(localAim);
+            var direction = weapons.GetAimDirection(slot.Definition, weapons.bulletSpawn);
             var projectile = Instantiate(projectilePrefab, weapons.bulletSpawn.position, Quaternion.LookRotation(direction));
             projectile.GetComponent<Projectile>().SetDamage(damage);
             projectile.GetComponent<Rigidbody>().linearVelocity = direction * slot.Definition.projectileSpeed;
             slot.LoadedAmmo--;
+            weapons.GunFired(slot.Definition);
+            weapons.Audio.Play(slot.Definition.useSound);
             next += RoundInterval;
         }
     }

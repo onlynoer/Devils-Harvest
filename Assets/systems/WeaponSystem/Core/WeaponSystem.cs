@@ -42,6 +42,47 @@ public sealed class WeaponSystem : MonoBehaviour
     private GameObject equippedVisual;
     private WeaponInstance renderedInstance;
     private float nextFireTime;
+    private FirstPersonLook look;
+    private float normalFov, aimBlend, kick;
+    private bool awaitAimRelease, automaticHeld;
+    public float AimBlend => aimBlend;
+    public bool IsAiming => aimBlend > .1f;
+
+    private void OnDisable()
+    {
+        ResetGunView();
+        targetedInteractable = null;
+    }
+
+    private void ResetGunView()
+    {
+        aimBlend = kick = 0f;
+        automaticHeld = false;
+        awaitAimRelease = GameInput.IsHeld(GameAction.Aim);
+        if (playerCamera != null && normalFov > 0f) playerCamera.fieldOfView = normalFov;
+        if (look != null) look.ClearKick();
+        if (equippedVisual != null) equippedVisual.SetActive(true);
+    }
+
+    private void UpdateGunView()
+    {
+        var weapon = EquippedWeapon;
+        if (weapon == null || weapon.useType != WeaponUseType.Gun || playerCamera == null) return;
+        bool held = GameInput.IsHeld(GameAction.Aim);
+        if (!held) awaitAimRelease = false;
+        float target = held && !awaitAimRelease && GameInput.GameplayEnabled ? 1f : 0f;
+        aimBlend = GameInput.GameplayEnabled ? Mathf.MoveTowards(aimBlend, target, Time.deltaTime * 8f) : 0f;
+        playerCamera.fieldOfView = Mathf.Lerp(normalFov, normalFov * weapon.aimFieldOfViewScale, aimBlend);
+        kick = Mathf.MoveTowards(kick, 0f, Time.deltaTime * 6f);
+        if (equippedVisual != null) equippedVisual.SetActive(weapon.sightStyle != GunSightStyle.Scope || aimBlend < .8f);
+    }
+
+    public void GunFired(WeaponData weapon)
+    {
+        float lift = weapon.recoilDegrees * Mathf.Lerp(1f, .65f, aimBlend);
+        if (look != null) look.Kick(lift);
+        kick = Mathf.Min(1.5f, kick + lift * .55f);
+    }
 
     public WeaponInventory Inventory
     {
@@ -74,6 +115,11 @@ public sealed class WeaponSystem : MonoBehaviour
         inventory = GetComponent<WeaponInventory>();
         player = GetComponent<Player>();
         weaponAudio = Audio;
+        if (playerCamera != null)
+        {
+            look = playerCamera.GetComponent<FirstPersonLook>();
+            normalFov = playerCamera.fieldOfView;
+        }
     }
 
     private void Update()
@@ -81,6 +127,7 @@ public sealed class WeaponSystem : MonoBehaviour
         targetedInteractable = FindTargetedInteractable();
         HandleInput();
         SyncEquippedVisual();
+        UpdateGunView();
         ApplyEquippedPose();
         if (swing.Tick()) ResolveMeleeHit(swingingWeapon);
     }
@@ -112,7 +159,12 @@ public sealed class WeaponSystem : MonoBehaviour
             if (GameInput.WasPressed(GameInput.HotbarActions[i])) inventory.Select(i);
 
         if (Mouse.current != null) SelectFromScrollWheel(Mouse.current.scroll.ReadValue().y);
-        if (GameInput.WasPressed(GameAction.Attack)) UseWeapon();
+        if (!isActiveAndEnabled) return;
+        var selected = inventory.Selected;
+        bool pressed = GameInput.WasPressed(GameAction.Attack);
+        if (!GameInput.IsHeld(GameAction.Attack) || renderedInstance != selected) automaticHeld = false;
+        if (pressed) automaticHeld = selected?.Definition != null && selected.Definition.automatic;
+        if (pressed || automaticHeld) UseWeapon();
     }
 
     /// <summary>Scroll up = next slot, scroll down = previous slot, wrapping around the hotbar.</summary>
@@ -128,13 +180,58 @@ public sealed class WeaponSystem : MonoBehaviour
 
     // ---------------------------------------------------------------- Interaction / drop
 
+    private readonly Collider[] nearbyHits = new Collider[160];
+    private float nextNearbyScan;
+    private Collider nearbyCollider;
+    public IInteractable NearbyInteraction { get; private set; }
+
+    private void ScanNearby(Vector3 eye, Vector3 forward)
+    {
+        nextNearbyScan = Time.time + .14f;
+        NearbyInteraction = null;
+        nearbyCollider = null;
+        float best = float.PositiveInfinity;
+        int count = Physics.OverlapSphereNonAlloc(eye, pickupRange + 5f, nearbyHits, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < count; i++)
+        {
+            var hit = nearbyHits[i];
+            if (hit.transform.IsChildOf(transform)) continue;
+            var target = hit.GetComponentInParent<IInteractable>();
+            if (!(target is Behaviour component) || !component.isActiveAndEnabled) continue;
+            Vector3 delta = hit.bounds.center - eye;
+            float facing = Vector3.Dot(forward, delta.normalized);
+            float score = delta.magnitude + (1f - facing) * 3f;
+            if (score >= best || !CanSee(eye, hit, target)) continue;
+            best = score;
+            NearbyInteraction = target;
+            nearbyCollider = hit;
+        }
+    }
+
+    private static bool CanSee(Vector3 eye, Collider target, IInteractable interaction)
+    {
+        Vector3 delta = target.bounds.center - eye;
+        if (!Physics.Raycast(eye, delta, out var hit, delta.magnitude + .05f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
+            return false;
+        return hit.collider.GetComponentInParent<IInteractable>() == interaction;
+    }
+
     private IInteractable FindTargetedInteractable()
     {
         if (playerCamera == null) return null;
         var ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        if (!Physics.Raycast(ray, out RaycastHit hit, pickupRange)) return null;
-        IInteractable target = hit.collider.GetComponentInParent<IInteractable>();
-        return target is Behaviour behaviour && behaviour.isActiveAndEnabled ? target : null;
+        if (Time.time >= nextNearbyScan) ScanNearby(ray.origin, ray.direction);
+        if (Physics.Raycast(ray, out var hit, pickupRange, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
+        {
+            var exact = hit.collider.GetComponentInParent<IInteractable>();
+            if (exact is Behaviour component && component.isActiveAndEnabled) return exact;
+        }
+        if (nearbyCollider == null || !nearbyCollider.enabled || !(NearbyInteraction is Behaviour nearby) ||
+            nearby == null || !nearby.isActiveAndEnabled) { NearbyInteraction = null; return null; }
+        Vector3 toward = nearbyCollider.bounds.center - ray.origin;
+        if (toward.magnitude <= pickupRange && Vector3.Dot(ray.direction, toward.normalized) >= .68f &&
+            CanSee(ray.origin, nearbyCollider, NearbyInteraction)) return NearbyInteraction;
+        return null;
     }
 
     private void Interact()
@@ -215,6 +312,7 @@ public sealed class WeaponSystem : MonoBehaviour
         WeaponInstance selected = inventory.Selected;
         if (selected == renderedInstance) return;
 
+        ResetGunView();
         swing.Cancel();
         if (equippedVisual != null) Destroy(equippedVisual);
         equippedVisual = null;
@@ -246,6 +344,15 @@ public sealed class WeaponSystem : MonoBehaviour
         model.localPosition = weapon.equippedPosition;
         model.localRotation = Quaternion.Euler(weapon.equippedRotation);
         model.localScale = weapon.equippedScale;
+        if (weapon.useType == WeaponUseType.Gun && playerCamera != null)
+        {
+            var eye = playerCamera.transform;
+            Vector3 sight = eye.InverseTransformPoint(model.TransformPoint(weapon.sightReference));
+            Vector3 offset = new Vector3(-sight.x, -.009f - sight.y, .035f) * aimBlend;
+            offset.z -= kick * .06f;
+            model.position += eye.TransformVector(offset);
+            model.RotateAround(model.position, eye.right, -kick * 4f);
+        }
     }
 
     // ---------------------------------------------------------------- Attacking
@@ -335,6 +442,7 @@ public sealed class WeaponSystem : MonoBehaviour
         Rigidbody body = projectile.GetComponent<Rigidbody>();
         if (body != null) body.linearVelocity = direction * weapon.projectileSpeed;
         item.LoadedAmmo--;
+        if (weapon.useType == WeaponUseType.Gun) GunFired(weapon);
         Audio.Play(weapon.useSound);
     }
 
@@ -342,7 +450,7 @@ public sealed class WeaponSystem : MonoBehaviour
     /// Bows and staffs fire straight along the camera. Guns aim from the muzzle at whatever the crosshair is on,
     /// so bullets hit the reticle even though the muzzle is offset from the camera.
     /// </summary>
-    private Vector3 GetAimDirection(WeaponData weapon, Transform spawn)
+    public Vector3 GetAimDirection(WeaponData weapon, Transform spawn)
     {
         Ray aimRay = playerCamera.ViewportPointToRay(new Vector3(.5f, .5f, 0f));
         if (weapon.useType != WeaponUseType.Gun) return aimRay.direction;

@@ -63,8 +63,22 @@ public sealed class NewGameMenuController : MonoBehaviour
 
     private void OnEnable() => Bind();
 
+    private int lastConfirmationFrame = -1;
+
+    private void SubmitName(string value)
+    {
+        if (saveNameInput.wasCanceled || !newGameScreen.activeInHierarchy ||
+            startHarvestButton == null || !startHarvestButton.IsInteractable()) return;
+        StartHarvest();
+    }
+
     public void Bind()
     {
+        if (saveNameInput != null)
+        {
+            saveNameInput.onSubmit.RemoveListener(SubmitName);
+            saveNameInput.onSubmit.AddListener(SubmitName);
+        }
         Listen(newGameButton, OpenNewGame);
         Listen(loadGameButton, OpenLoadGame);
         Listen(startHarvestButton, StartHarvest);
@@ -160,6 +174,8 @@ public sealed class NewGameMenuController : MonoBehaviour
 
     public void StartHarvest()
     {
+        if (lastConfirmationFrame == Time.frameCount) return;
+        lastConfirmationFrame = Time.frameCount;
         try
         {
             string requestedName = saveNameInput != null ? saveNameInput.text : "";

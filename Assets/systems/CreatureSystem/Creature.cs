@@ -1,9 +1,13 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 public class Creature : MonoBehaviour
 {
     public CreatureData creatureData;
+    public AnimationClip deathClip;
+    private PlayableGraph deathGraph;
 
     public CreatureAudio Sounds { get; private set; }
 
@@ -129,6 +133,46 @@ public class Creature : MonoBehaviour
             var drop = Instantiate(creatureData.meatDrop, position, transform.rotation);
             drop.SetYield(creatureData.lootAmount);
         }
+        foreach (var behaviour in GetComponentsInChildren<MonoBehaviour>())
+        {
+            if (behaviour != this) behaviour.enabled = false;
+        }
+        foreach (var collider in GetComponentsInChildren<Collider>()) collider.enabled = false;
+        StartCoroutine(Fall());
+    }
+
+    private IEnumerator Fall()
+    {
+        var animator = GetComponentInChildren<Animator>();
+        if (animator != null && deathClip != null)
+        {
+            animator.applyRootMotion = false;
+            deathGraph = PlayableGraph.Create("Creature death");
+            deathGraph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
+            var clip = AnimationClipPlayable.Create(deathGraph, deathClip);
+            var output = AnimationPlayableOutput.Create(deathGraph, "Death", animator);
+            output.SetSourcePlayable(clip);
+            deathGraph.Play();
+            yield return new WaitForSeconds(deathClip.length);
+        }
+        else
+        {
+            if (animator != null) animator.enabled = false;
+            var upright = transform.rotation;
+            var fallen = upright * Quaternion.Euler(4f, 0f, 78f);
+            for (float t = 0f; t < .52f; t += Time.deltaTime)
+            {
+                transform.rotation = Quaternion.Slerp(upright, fallen, Mathf.SmoothStep(0f, 1f, t / .52f));
+                yield return null;
+            }
+            transform.rotation = fallen;
+            yield return new WaitForSeconds(.28f);
+        }
         Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        if (deathGraph.IsValid()) deathGraph.Destroy();
     }
 }

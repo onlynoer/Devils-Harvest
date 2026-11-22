@@ -43,17 +43,13 @@ public class MonsterAI : MonoBehaviour
 
     void Start()
     {
+        if (player == null) player = FindAnyObjectByType<Player>();
         StartIdle();
     }
 
     void Update()
     {
-        if (player == null || animator == null || controller == null)
-        {
-            Wander();
-            ApplyGravity();
-            return;
-        }
+        if (player == null || player.IsDead || animator == null || controller == null) return;
 
         cooldownTimer -= Time.deltaTime;
 
@@ -61,6 +57,13 @@ public class MonsterAI : MonoBehaviour
             transform.position,
             player.transform.position
         );
+
+        if (!isAggressive && distance <= loseTargetRange * .72f)
+        {
+            Provoke();
+            if (TryGetComponent(out Creature creature) && creature.Sounds != null)
+                creature.Sounds.Signal(creature.creatureData.warning != null ? creature.creatureData.warning : creature.creatureData.call);
+        }
 
         // Return to passive mode if the player escapes.
         if (isAggressive && distance > loseTargetRange)

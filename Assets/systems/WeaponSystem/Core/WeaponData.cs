@@ -10,6 +10,8 @@ public enum WeaponUseType
     Staff
 }
 
+public enum GunSightStyle { Iron, Aperture, Scope }
+
 /// <summary>Which spawn point on the player a projectile leaves from.</summary>
 public enum WeaponSpawnType
 {
@@ -38,6 +40,14 @@ public class WeaponData : InventoryItemData
     public float cooldown = 0.5f;
     [Tooltip("Ammo in a full weapon. Each shot uses one.")]
     public int maxAmmo = 20;
+
+    [Header("Gun handling")]
+    public GunSightStyle sightStyle;
+    [Tooltip("Top of the physical sight in the equipped model's local coordinates.")]
+    public Vector3 sightReference;
+    [Range(.15f, 1f)] public float aimFieldOfViewScale = .78f;
+    [Range(.1f, 5f)] public float recoilDegrees = 1.2f;
+    public bool automatic;
 
     [Header("Projectile")]
     [Tooltip("Prefab with a Rigidbody, Projectile and ProjectileHit.")]

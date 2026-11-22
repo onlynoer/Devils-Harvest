@@ -24,6 +24,15 @@ public sealed class PowerupPickup : MonoBehaviour
     private float respawnAt = -1f;
 
     public PowerupData Powerup => powerup;
+    [Tooltip("Stable save key for a one-use exploration reward.")]
+    public string cacheId;
+
+    private void Start()
+    {
+        var progress = SaveGameService.ActiveSave?.progress;
+        if (!string.IsNullOrEmpty(cacheId) && progress?.exploredCaches != null && progress.exploredCaches.Contains(cacheId))
+            gameObject.SetActive(false);
+    }
 
     private void Awake()
     {
@@ -37,6 +46,17 @@ public sealed class PowerupPickup : MonoBehaviour
         }
         foreach (Collider collider in colliders) collider.isTrigger = true;
         renderers = GetComponentsInChildren<Renderer>(true);
+        if (!string.IsNullOrEmpty(cacheId) && powerup != null)
+        {
+            var tint = new MaterialPropertyBlock();
+            foreach (var surface in renderers)
+            {
+                surface.GetPropertyBlock(tint);
+                tint.SetColor("_BaseColor", powerup.color);
+                tint.SetColor("_Color", powerup.color);
+                surface.SetPropertyBlock(tint);
+            }
+        }
     }
 
     private void Update()
@@ -54,7 +74,20 @@ public sealed class PowerupPickup : MonoBehaviour
         Player player = other.GetComponentInParent<Player>();
         if (player == null || player.IsDead) return;
 
+        var progress = SaveGameService.ActiveSave?.progress;
+        if (!string.IsNullOrEmpty(cacheId) && progress != null)
+        {
+            if (progress.exploredCaches == null) progress.exploredCaches = new System.Collections.Generic.List<string>();
+            if (progress.exploredCaches.Contains(cacheId)) return;
+            progress.exploredCaches.Add(cacheId);
+        }
         PlayerPowerups.For(player.gameObject).Apply(powerup);
+        if (!string.IsNullOrEmpty(cacheId))
+        {
+            gameObject.SetActive(false);
+            SaveGameService.SaveActive();
+            return;
+        }
 
         if (respawnTime > 0f)
         {

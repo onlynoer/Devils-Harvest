@@ -17,7 +17,7 @@ public sealed class WaterDeathZone : MonoBehaviour
             return;
         }
 
-        player.Kill();
+        player.KillAndRecover();
         Debug.Log("Player drowned.", player);
     }
 }

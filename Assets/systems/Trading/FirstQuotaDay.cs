@@ -13,6 +13,15 @@ public sealed class FirstQuotaDay : MonoBehaviour
     public bool Accepting => progress != null && progress.firstQuotaResult == 0;
     public int Remaining => Mathf.Max(0, RequiredMeat - progress.meatOffered);
 
+    public bool ReadyToOffer => Accepting && Remaining > 0 && progress.meat >= Remaining;
+    public float DayFraction => progress == null ? 0f : Mathf.Clamp01(progress.firstDayElapsed / DaySeconds);
+
+    private void Start()
+    {
+        if (objective != null) gameObject.AddComponent<QuotaCompass>().Bind(this, objective);
+        gameObject.AddComponent<IslandDaylight>().Bind(this);
+    }
+
     public void Bind(SaveProgress world) { progress = world; }
 
     private void Update()
@@ -40,7 +49,10 @@ public sealed class FirstQuotaDay : MonoBehaviour
         shownMeat = progress.meat;
         shownResult = progress.firstQuotaResult;
         if (Accepting)
-            objective.text = $"FIRST OFFERING   {seconds / 60}:{seconds % 60:00}\nBring {Remaining} more meat to the mountain altar\n{progress.meat} carried   ·   {Mathf.Min(RequiredMeat, progress.meatOffered)}/{RequiredMeat} offered";
+        {
+            string instruction = ReadyToOffer ? $"Offer {Remaining} at the altar to complete the quota" : $"Bring {Remaining} meat to the mountain altar";
+            objective.text = $"FIRST OFFERING   {seconds / 60}:{seconds % 60:00}\n{instruction}\n{progress.meat} carried   ·   {Mathf.Min(RequiredMeat, progress.meatOffered)}/{RequiredMeat} offered";
+        }
         else
             objective.text = (shownResult == 1 ? "FIRST QUOTA MET" : "FIRST QUOTA MISSED") +
                 $"\n{Mathf.Min(RequiredMeat, progress.meatOffered)}/{RequiredMeat} offered   ·   {progress.meat} carried\nExplore, or press Enter for the menu";

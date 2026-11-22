@@ -144,6 +144,13 @@ public sealed class HarvestTrade : MonoBehaviour
         shop.Show();
     }
 
+    public void CloseForRespawn()
+    {
+        Close();
+        resumeInput = false;
+        weapons.enabled = restoreWeapons;
+    }
+
     public void Close()
     {
         if (!IsOpen) return;

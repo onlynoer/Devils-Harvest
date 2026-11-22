@@ -21,6 +21,11 @@ MonoBehaviour:
   damage: 30
   cooldown: 0.48
   maxAmmo: 90
+  sightStyle: 1
+  sightReference: {x: -0.180207, y: 0.10956505, z: 0.0018759966}
+  aimFieldOfViewScale: 0.63
+  recoilDegrees: 0.83
+  automatic: 0
   projectilePrefab: {fileID: 4970866713314988978, guid: f609a2275c7d11549aa5a7f7418ec5cd, type: 3}
   projectileSpeed: 95
   meleeRange: 2.2

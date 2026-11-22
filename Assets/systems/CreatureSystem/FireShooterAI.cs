@@ -55,15 +55,18 @@ public class FireShooterAI : MonoBehaviour
 
     private Vector3 wanderDirection;
 
+    private void OnDisable() => SetCasting(false);
+
     void Start()
     {
+        if (player == null) player = FindAnyObjectByType<Player>();
         SetCasting(false);
         StartIdle();
     }
 
     void Update()
     {
-        if (player == null || animator == null || controller == null)
+        if (player == null || player.IsDead || animator == null || controller == null)
             return;
 
         float distance = Vector3.Distance(

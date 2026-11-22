@@ -8,13 +8,17 @@ public class Player : MonoBehaviour
     private float currentHealth;
     private bool isDead;
     private Pose arrival;
-    private bool resumeWeapons;
+    private bool resumeWeapons, resumeLook;
+    private FirstPersonLook look;
+    private float deathTime;
+    private Quaternion viewAtDeath;
     public float CurrentHealth => currentHealth;
     public float MaxHealth => playerData != null ? playerData.maxHealth : 0f;
     public bool IsDead => isDead;
 
     void Start()
     {
+        look = GetComponentInChildren<FirstPersonLook>();
         arrival = new Pose(transform.position, transform.rotation);
         if (playerData == null)
         {
@@ -82,7 +86,21 @@ public class Player : MonoBehaviour
 
     private IEnumerator Recover(Transform checkpoint)
     {
-        yield return new WaitForSeconds(1f);
+        const float duration = 1.25f;
+        while (Time.time - deathTime < duration)
+        {
+            if (look != null)
+            {
+                float fall = Mathf.SmoothStep(0f, 1f, (Time.time - deathTime) / .65f);
+                look.transform.localRotation = viewAtDeath * Quaternion.Euler(15f * fall, 0f, 32f * fall);
+            }
+            yield return null;
+        }
+        if (look != null)
+        {
+            look.transform.localRotation = viewAtDeath;
+            look.enabled = resumeLook;
+        }
 
         var controller = GetComponent<CharacterController>();
         var movement = GetComponent<PlayerMovement>();
@@ -102,6 +120,20 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void OnGUI()
+    {
+        if (!isDead) return;
+        float fade = Mathf.SmoothStep(0f, .95f, (Time.time - deathTime) / .9f);
+        var previous = GUI.color;
+        GUI.depth = -50;
+        GUI.color = new Color(.12f, .018f, .025f, fade);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.color = new Color(1f, .93f, .84f, fade);
+        var style = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.Max(18, Screen.height / 25) };
+        GUI.Label(new Rect(0f, Screen.height * .42f, Screen.width, Screen.height * .15f), "Recovering", style);
+        GUI.color = previous;
+    }
+
     void Die()
     {
         if (isDead)
@@ -109,12 +141,20 @@ public class Player : MonoBehaviour
             return;
         }
 
+        if (TryGetComponent(out HarvestTrade trade) && trade.IsOpen) trade.CloseForRespawn();
         isDead = true;
+        deathTime = Time.time;
         if (TryGetComponent(out PlayerPowerups powerups)) powerups.ClearAll();
         if (TryGetComponent(out WeaponSystem weapons))
         {
             resumeWeapons = weapons.enabled;
             weapons.enabled = false;
+        }
+        if (look != null)
+        {
+            resumeLook = look.enabled;
+            viewAtDeath = look.transform.localRotation;
+            look.enabled = false;
         }
         var movement = GetComponent<PlayerMovement>();
         if (movement != null)

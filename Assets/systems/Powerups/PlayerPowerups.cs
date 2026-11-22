@@ -46,6 +46,40 @@ public sealed class PlayerPowerups : MonoBehaviour
         Recalculate();
     }
 
+    private SaveProgress progress;
+
+    private void Start()
+    {
+        progress = SaveGameService.ActiveSave?.progress;
+        if (progress == null) return;
+        if (progress.activeBoosts != null && progress.activeBoosts.Count > 0)
+        {
+            var sources = FindObjectsByType<PowerupPickup>(FindObjectsInactive.Include);
+            foreach (var saved in progress.activeBoosts)
+            {
+                var source = Array.Find(sources, p => p.Powerup != null && p.Powerup.name == saved.definition);
+                if (source == null || saved.remaining <= 0f) continue;
+                var data = source.Powerup;
+                active.Add(new Active { data = data, endTime = Time.time + Mathf.Min(saved.remaining, data.duration) });
+                Started?.Invoke(data);
+            }
+            Recalculate();
+        }
+        SaveGameService.BeforeSave += Capture;
+    }
+
+    private void Capture(SaveProgress saving)
+    {
+        if (saving != progress) return;
+        if (saving.activeBoosts == null) saving.activeBoosts = new List<SavedBoost>();
+        saving.activeBoosts.Clear();
+        foreach (var boost in active)
+            if (boost.Remaining > 0f)
+                saving.activeBoosts.Add(new SavedBoost { definition = boost.data.name, remaining = boost.Remaining });
+    }
+
+    private void OnDestroy() => SaveGameService.BeforeSave -= Capture;
+
     private void Update()
     {
         // Time.time stops while paused, so timers pause with the game.

@@ -46,13 +46,14 @@ public class BossAI : MonoBehaviour
 
     void Start()
     {
+        if (player == null) player = FindAnyObjectByType<Player>();
         creature = GetComponent<Creature>();
         StartIdle();
     }
 
     void Update()
     {
-        if (player == null || animator == null || controller == null)
+        if (player == null || player.IsDead || animator == null || controller == null)
             return;
 
         cooldownTimer -= Time.deltaTime;
