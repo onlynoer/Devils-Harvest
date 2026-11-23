@@ -163,48 +163,7 @@ public sealed class WeaponSystem : MonoBehaviour
         Quaternion rotation = Quaternion.LookRotation(origin.forward, Vector3.up);
         if (weapon != null) rotation *= Quaternion.Euler(weapon.equippedRotation);
 
-        GameObject dropped = Instantiate(definition.ModelPrefab, position, rotation);
-        dropped.name = definition.DisplayName + " (Dropped)";
-        if (weapon != null) dropped.transform.localScale = weapon.equippedScale;
-
-        WeaponPickup pickup = dropped.GetComponent<WeaponPickup>();
-        if (pickup == null) pickup = dropped.AddComponent<WeaponPickup>();
-        pickup.SetItem(definition, item.LoadedAmmo);
-
-        if (dropped.GetComponentInChildren<Collider>(true) == null)
-        {
-            Bounds bounds = GetLocalRendererBounds(dropped.transform, dropped.GetComponentsInChildren<Renderer>(true));
-            var box = dropped.AddComponent<BoxCollider>();
-            box.center = bounds.center;
-            box.size = bounds.size;
-        }
-
-        Rigidbody body = dropped.GetComponent<Rigidbody>();
-        if (body == null) body = dropped.AddComponent<Rigidbody>();
-        body.isKinematic = false;
-        body.useGravity = true;
-    }
-
-    private static Bounds GetLocalRendererBounds(Transform root, Renderer[] renderers)
-    {
-        var result = new Bounds(Vector3.zero, Vector3.one * .5f);
-        bool found = false;
-        foreach (Renderer renderer in renderers)
-        {
-            if (renderer == null) continue;
-            Bounds bounds = renderer.localBounds;
-            for (int x = -1; x <= 1; x += 2)
-            for (int y = -1; y <= 1; y += 2)
-            for (int z = -1; z <= 1; z += 2)
-            {
-                Vector3 corner = bounds.center + Vector3.Scale(bounds.extents, new Vector3(x, y, z));
-                Vector3 local = root.InverseTransformPoint(renderer.transform.TransformPoint(corner));
-                if (!found) { result = new Bounds(local, Vector3.zero); found = true; }
-                else result.Encapsulate(local);
-            }
-        }
-        result.Expand(Vector3.one * .1f);
-        return result;
+        WeaponPickup.SpawnWorldPickup(definition, item.LoadedAmmo, position, rotation);
     }
 
     // ---------------------------------------------------------------- Equipped model

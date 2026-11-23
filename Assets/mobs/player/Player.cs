@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class Player : MonoBehaviour
+public class Player : MonoBehaviour, IDamageable
 {
     public PlayerData playerData;
 
@@ -12,6 +12,9 @@ public class Player : MonoBehaviour
     public float CurrentHealth => currentHealth;
     public float MaxHealth => playerData != null ? playerData.maxHealth : 0f;
     public bool IsDead => isDead;
+    public bool IsAlive => !isDead && playerData != null;
+
+    public void ApplyDamage(in DamageInfo info) => TakeDamage(info.Amount);
 
     void Start()
     {

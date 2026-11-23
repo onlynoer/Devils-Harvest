@@ -93,6 +93,15 @@ namespace ithappy.Animals_FREE
             }
         }
 
+        /// <summary>
+        /// Call after rotating the transform yourself while standing still, so the mover keeps the new facing
+        /// instead of turning back to the last direction it walked.
+        /// </summary>
+        public void SyncFacing()
+        {
+            m_Movement?.SetFacing(m_Transform.forward);
+        }
+
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
             if(hit.normal.y > m_Controller.stepOffset)
@@ -160,6 +169,12 @@ namespace ithappy.Animals_FREE
                 m_RotateSpeed = rotateSpeed;
 
                 m_Space = space;
+            }
+
+            public void SetFacing(in Vector3 forward)
+            {
+                m_LastForward = forward;
+                m_IsRotating = false;
             }
 
             public void SetSurface(in Vector3 normal)

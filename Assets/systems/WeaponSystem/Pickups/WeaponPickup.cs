@@ -29,6 +29,60 @@ public class WeaponPickup : MonoBehaviour, IInteractable
         loadedAmmo = Mathf.Max(0, ammo);
     }
 
+    /// <summary>
+    /// Spawns a physical, pick-up-able copy of <paramref name="definition"/> in the world (player drops, creature
+    /// loot). Adds a collider from the renderer bounds if the model has none. Returns null if it has no model.
+    /// </summary>
+    public static WeaponPickup SpawnWorldPickup(InventoryItemData definition, int ammo, Vector3 position, Quaternion rotation)
+    {
+        if (definition == null || definition.ModelPrefab == null) return null;
+
+        GameObject dropped = Instantiate(definition.ModelPrefab, position, rotation);
+        dropped.name = definition.DisplayName + " (Dropped)";
+        if (definition is WeaponData weapon) dropped.transform.localScale = weapon.equippedScale;
+
+        WeaponPickup pickup = dropped.GetComponent<WeaponPickup>();
+        if (pickup == null) pickup = dropped.AddComponent<WeaponPickup>();
+        pickup.enabled = true;
+        pickup.SetItem(definition, ammo);
+
+        if (dropped.GetComponentInChildren<Collider>(true) == null)
+        {
+            Bounds bounds = GetLocalRendererBounds(dropped.transform, dropped.GetComponentsInChildren<Renderer>(true));
+            var box = dropped.AddComponent<BoxCollider>();
+            box.center = bounds.center;
+            box.size = bounds.size;
+        }
+
+        Rigidbody body = dropped.GetComponent<Rigidbody>();
+        if (body == null) body = dropped.AddComponent<Rigidbody>();
+        body.isKinematic = false;
+        body.useGravity = true;
+        return pickup;
+    }
+
+    private static Bounds GetLocalRendererBounds(Transform root, Renderer[] renderers)
+    {
+        var result = new Bounds(Vector3.zero, Vector3.one * .5f);
+        bool found = false;
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null) continue;
+            Bounds bounds = renderer.localBounds;
+            for (int x = -1; x <= 1; x += 2)
+            for (int y = -1; y <= 1; y += 2)
+            for (int z = -1; z <= 1; z += 2)
+            {
+                Vector3 corner = bounds.center + Vector3.Scale(bounds.extents, new Vector3(x, y, z));
+                Vector3 local = root.InverseTransformPoint(renderer.transform.TransformPoint(corner));
+                if (!found) { result = new Bounds(local, Vector3.zero); found = true; }
+                else result.Encapsulate(local);
+            }
+        }
+        result.Expand(Vector3.one * .1f);
+        return result;
+    }
+
     public string GetPrompt(WeaponSystem user)
     {
         InventoryItemData definition = Definition;

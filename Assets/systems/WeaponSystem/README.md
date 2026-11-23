@@ -31,10 +31,10 @@ Handles everything the player can carry and attack with: the hotbar inventory, p
 | `Inventory/` | `WeaponInstance.cs` | One carried item plus its ammo. |
 | `Interaction/` | `IInteractable.cs` | Interface for anything the player can look at and press E on. |
 | `Unarmed/` | `FistsController.cs` | First-person fists shown with an empty slot; alternating punches. |
-| `Pickups/` | `WeaponPickup.cs` | Put on a world object to make it pick-up-able. |
+| `Pickups/` | `WeaponPickup.cs` | Put on a world object to make it pick-up-able. `WeaponPickup.SpawnWorldPickup` spawns a dropped copy (used by player drops and armed creatures). |
 | `Pickups/` | `AmmoPickup.cs` | One-use ammo box: refills the selected weapon, then disappears. |
 | `Projectiles/` | `Projectile.cs` | Stores the damage a projectile deals. |
-| `Projectiles/` | `ProjectileHit.cs` | Damages the `Creature` it hits, then destroys itself; also self-destructs after `lifetime`. |
+| `Projectiles/` | `ProjectileHit.cs` | Damages the `Creature` it hits, then destroys itself; also self-destructs after `lifetime`. With an owner set (`SetOwner`, used by armed creatures) it damages any `IDamageable`, including the player, except the owner. |
 | `BowArrow/`, `Guns/`, `Staff/` | (empty) | Reserved for weapon-type-specific scripts. |
 
 Related scripts outside this folder:

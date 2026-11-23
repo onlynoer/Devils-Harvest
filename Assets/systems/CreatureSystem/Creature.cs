@@ -1,11 +1,28 @@
-using UnityEngine;
+using System;
 using System.Collections;
+using UnityEngine;
 
-public class Creature : MonoBehaviour
+public class Creature : MonoBehaviour, IDamageable
 {
     public CreatureData creatureData;
 
+    [Tooltip("Testing: always apply this secret (index into Creature Data > Secrets). -1 = roll normally.")]
+    public int forceSecretIndex = -1;
+
     public CreatureAudio Sounds { get; private set; }
+    /// <summary>The secret rolled at spawn, or null.</summary>
+    public CreatureSecret ActiveSecret { get; private set; }
+    public float CurrentHealth => currentHealth;
+    public float MaxHealth { get; private set; }
+    public float HealthFraction => MaxHealth > 0f ? currentHealth / MaxHealth : 0f;
+    public bool IsAlive => creatureData != null && currentHealth > 0f;
+    /// <summary>Species temperament, or the secret's when one is active.</summary>
+    public CreatureTemperament Temperament =>
+        ActiveSecret != null ? ActiveSecret.temperament : creatureData != null ? creatureData.temperament : CreatureTemperament.Passive;
+
+    /// <summary>Raised after health is reduced (also on the killing blow, before Died).</summary>
+    public event Action<Creature, DamageInfo> Damaged;
+    public event Action<Creature> Died;
 
     private float currentHealth;
 
@@ -14,15 +31,23 @@ public class Creature : MonoBehaviour
 
     private Coroutine flashCoroutine;
 
-    void Start()
+    void Awake()
     {
         if (creatureData == null)
         {
-            Debug.LogWarning("Creature Data is missing!");
+            Debug.LogWarning("Creature Data is missing on " + name + "!", this);
             return;
         }
 
-        currentHealth = creatureData.maxHealth;
+        RollSecret();
+        MaxHealth = creatureData.maxHealth * (ActiveSecret != null ? ActiveSecret.healthMultiplier : 1f);
+        currentHealth = MaxHealth;
+    }
+
+    void Start()
+    {
+        if (creatureData == null) return;
+
         if (creatureData.call != null)
         {
             Sounds = gameObject.AddComponent<CreatureAudio>();
@@ -40,13 +65,34 @@ public class Creature : MonoBehaviour
 
         Debug.Log(
             creatureData.creatureName +
+            (ActiveSecret != null ? " [" + ActiveSecret.label + "]" : "") +
             " spawned with " +
             currentHealth +
             " health."
         );
     }
 
-    public void TakeDamage(float damage, Vector3 damageDirection)
+    private void RollSecret()
+    {
+        CreatureSecret[] secrets = creatureData.secrets;
+        if (secrets == null || secrets.Length == 0) return;
+
+        if (forceSecretIndex >= 0 && forceSecretIndex < secrets.Length)
+            ActiveSecret = secrets[forceSecretIndex];
+        else
+            foreach (CreatureSecret secret in secrets)
+                if (secret != null && UnityEngine.Random.value < secret.chance) { ActiveSecret = secret; break; }
+
+        if (ActiveSecret != null && ActiveSecret.weapon != null)
+            gameObject.AddComponent<ArmedCreature>().Setup(ActiveSecret);
+    }
+
+    public void ApplyDamage(in DamageInfo info) => TakeDamage(info.Amount, info.Direction, info.Source);
+
+    public void TakeDamage(float damage, Vector3 damageDirection) => TakeDamage(damage, damageDirection, null);
+
+    /// <param name="source">Who dealt the damage. Null is treated as the player by animal AI.</param>
+    public void TakeDamage(float damage, Vector3 damageDirection, GameObject source)
     {
         if (creatureData == null || currentHealth <= 0)
             return;
@@ -64,13 +110,6 @@ public class Creature : MonoBehaviour
         }
         currentHealth = Mathf.Max(currentHealth, 0f);
 
-        CreatureAI ai = GetComponent<CreatureAI>();
-
-        if (ai != null)
-        {
-            ai.Flee(transform.position - damageDirection);
-        }
-
         Debug.Log(
             creatureData.creatureName +
             " took " +
@@ -78,13 +117,19 @@ public class Creature : MonoBehaviour
             " damage. Health: " +
             currentHealth +
             "/" +
-            creatureData.maxHealth
+            MaxHealth
         );
 
-        if (flashCoroutine != null)
-            StopCoroutine(flashCoroutine);
+        if (renderers != null)
+        {
+            if (flashCoroutine != null)
+                StopCoroutine(flashCoroutine);
 
-        flashCoroutine = StartCoroutine(DamageFlash());
+            flashCoroutine = StartCoroutine(DamageFlash());
+        }
+
+        // CreatureAI listens here and decides whether to flee or fight back.
+        Damaged?.Invoke(this, new DamageInfo(actualDamage, damageDirection, source));
 
         if (currentHealth <= 0)
         {
@@ -100,8 +145,7 @@ public class Creature : MonoBehaviour
     {
         for (int i = 0; i < renderers.Length; i++)
         {
-            renderers[i].material.color =
-                creatureData.damageFlashColor;
+            if (renderers[i] != null) renderers[i].material.color = creatureData.damageFlashColor;
         }
 
         yield return new WaitForSeconds(
@@ -110,7 +154,7 @@ public class Creature : MonoBehaviour
 
         for (int i = 0; i < renderers.Length; i++)
         {
-            renderers[i].material.color = originalColors[i];
+            if (renderers[i] != null) renderers[i].material.color = originalColors[i];
         }
 
         flashCoroutine = null;
@@ -120,7 +164,9 @@ public class Creature : MonoBehaviour
     {
         Debug.Log(creatureData.creatureName + " died!");
 
+        Died?.Invoke(this);
         if (Sounds != null) Sounds.Die();
+        if (TryGetComponent(out ArmedCreature armed)) armed.DropWeapon();
         if (creatureData.meatDrop != null && creatureData.lootAmount > 0)
         {
             Vector3 position = transform.position;

@@ -60,7 +60,7 @@ public sealed class CreatureAudio : MonoBehaviour
         previousPosition = transform.position;
         delta.y = 0f;
         if (listener == null || !listener.isActiveAndEnabled)
-            listener = FindFirstObjectByType<AudioListener>();
+            listener = FindAnyObjectByType<AudioListener>();
         if (listener == null) return;
 
         float distanceSquared = (transform.position - listener.transform.position).sqrMagnitude;
