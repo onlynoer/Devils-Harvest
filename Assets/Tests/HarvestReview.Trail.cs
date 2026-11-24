@@ -82,6 +82,7 @@ public sealed partial class HarvestReview
         foreach (var wp in BeachTrail.Split(',').Select(ParsePoint))
         {
             yield return Walk(wp);
+            if (routeMode == "saddle") continue;
             if (wp == new Vector2(369, 244))
             {
                 var guard = Object.FindObjectsByType<FireShooterAI>().Single(c => c.name == "Shelter sentinel");
@@ -109,6 +110,7 @@ public sealed partial class HarvestReview
                 Face(boss.transform.position + Vector3.up * 5);
                 yield return Pic(routeMode + "-boss-trail");
                 yield return TestGiant(boss);
+                if (routeMode == "saddle") yield break;
             }
 
         }

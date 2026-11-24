@@ -500,7 +500,7 @@ public sealed partial class HarvestReview : MonoBehaviour
             yield return MountainCircuit();
             yield break;
         }
-        if (routeMode == "trail")
+        if (routeMode == "trail" || routeMode == "saddle")
         {
             yield return IslandTrail();
             yield break;
