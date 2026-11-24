@@ -21,6 +21,33 @@ public sealed class InteractPromptHud : MonoBehaviour
     private string lastAction;
     private string binding;
     private bool lastNearby;
+    private RectTransform holdBar, filled;
+
+    private void SetHoldBar(bool visible,float progress)
+    {
+        if (visible && holdBar == null)
+        {
+            holdBar = (RectTransform)new GameObject("Offering hold", typeof(RectTransform)).transform;
+            holdBar.gameObject.AddComponent<UnityEngine.UI.LayoutElement>().ignoreLayout = true;
+            holdBar.SetParent(panel.transform, false);
+            holdBar.anchorMin = holdBar.anchorMax = new Vector2(.5f,0f);
+            holdBar.sizeDelta = new Vector2(210,7);
+            holdBar.anchoredPosition = new Vector2(0,-5);
+            var track = holdBar.gameObject.AddComponent<UnityEngine.UI.Image>();
+            track.color = new Color(.16f,.08f,.09f,.96f);
+            track.raycastTarget = false;
+            filled = (RectTransform)new GameObject("Progress",typeof(RectTransform)).transform;
+            filled.SetParent(holdBar,false);
+            filled.anchorMin = Vector2.zero;
+            filled.offsetMin = filled.offsetMax = Vector2.zero;
+            var ink = filled.gameObject.AddComponent<UnityEngine.UI.Image>();
+            ink.color = new Color(1,.65f,.31f);
+            ink.raycastTarget = false;
+        }
+        if (holdBar == null) return;
+        holdBar.gameObject.SetActive(visible);
+        if (visible) filled.anchorMax = new Vector2(progress,1);
+    }
 
     private void OnEnable()
     {
@@ -51,6 +78,8 @@ public sealed class InteractPromptHud : MonoBehaviour
             target = null;
         string action = target?.GetPrompt(weaponSystem);
 
+        var altar = !hint ? target as AltarOffering : null;
+        SetHoldBar(altar != null && altar.CanInteract(weaponSystem),altar != null ? altar.Progress : 0);
         bool show = !string.IsNullOrEmpty(action);
         if (panel != null && panel.activeSelf != show) panel.SetActive(show);
         if (!show || label == null)
@@ -71,6 +100,7 @@ public sealed class InteractPromptHud : MonoBehaviour
                 target is AltarOffering ? "Offering altar" : target is DevilDealer ? "Devil Dealer" : "Ammo";
             label.text = description + " nearby  /  Look toward it";
         }
+        else if (altar != null && canInteract) label.text = $"Hold [{binding}] to {action}";
         else label.text = canInteract ? "[" + binding + "]  " + action : action;
         label.color = canInteract ? availableColor : blockedColor;
     }

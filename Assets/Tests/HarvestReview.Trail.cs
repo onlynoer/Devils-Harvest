@@ -8,16 +8,6 @@ using Object = UnityEngine.Object;
 
 public sealed partial class HarvestReview
 {
-    static IEnumerator SeeSign(string caption, Vector2 approach, string label)
-    {
-        yield return Walk(approach, 1.5f);
-        var board = GameObject.FindObjectsByType<TMPro.TextMeshPro>().Where(t => t.transform.parent && t.transform.parent.name == caption + " waypost").OrderBy(t => Vector3.Distance(t.transform.position, p.transform.position)).First();
-        Face(board.transform.position);
-        yield return Frames(3);
-        yield return Pic(routeMode + "-" + label);
-        Debug.Log("SIGN " + label + " distance=" + Vector3.Distance(board.transform.position, gun.playerCamera.transform.position));
-    }
-
     static IEnumerator Fight(Creature enemy)
     {
         var controller = enemy.GetComponent<CharacterController>();
@@ -92,12 +82,6 @@ public sealed partial class HarvestReview
         foreach (var wp in BeachTrail.Split(',').Select(ParsePoint))
         {
             yield return Walk(wp);
-            if (wp == new Vector2(330, 115))
-                yield return SeeSign("Hunting grounds", new Vector2(326, 143), "beach");
-            if (wp == new Vector2(349, 198))
-                yield return SeeSign("Hunting grounds", new Vector2(346, 195), "hunting");
-            if (wp == new Vector2(397, 282))
-                yield return SeeSign("Brass trail", new Vector2(390, 280), "brass");
             if (wp == new Vector2(369, 244))
             {
                 var guard = Object.FindObjectsByType<FireShooterAI>().Single(c => c.name == "Shelter sentinel");
@@ -114,8 +98,6 @@ public sealed partial class HarvestReview
                 yield return Fight(melee.GetComponent<Creature>());
             if (wp == new Vector2(668, 460))
                 yield return Fight(caster.GetComponent<Creature>());
-            if (wp == new Vector2(875, 420))
-                yield return SeeSign("Saddle trail", new Vector2(884, 420), "saddle");
         }
 
         foreach (var wp in SaddleTrail.Split(',').Select(ParsePoint))
@@ -129,8 +111,6 @@ public sealed partial class HarvestReview
                 yield return TestGiant(boss);
             }
 
-            if (wp == new Vector2(792, 684))
-                yield return SeeSign("Offering altar", new Vector2(792, 722), "altar");
         }
 
         yield return LoadAndReturn();

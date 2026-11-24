@@ -59,6 +59,13 @@ public static class SaveGameService
     private static double lastTimerTick;
 
     public static SaveGameData ActiveSave => activeSave;
+    private static bool newHarvest;
+    public static bool ConsumeNewHarvest()
+    {
+        bool fresh = newHarvest;
+        newHarvest = false;
+        return fresh;
+    }
 
     public static SaveGameData Create(string name, string startingLevelId = "main-level")
     {
@@ -74,6 +81,7 @@ public static class SaveGameService
         };
         Write(save);
         SetActive(save);
+        newHarvest = true;
         return save;
     }
 
@@ -171,6 +179,7 @@ public static class SaveGameService
     private static void SetActive(SaveGameData save)
     {
         activeSave = save;
+        newHarvest = false;
         lastTimerTick = Time.realtimeSinceStartupAsDouble;
         SaveGameRuntime.EnsureExists();
     }

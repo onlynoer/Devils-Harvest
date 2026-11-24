@@ -238,7 +238,7 @@ public sealed class WeaponSystem : MonoBehaviour
     {
         if (targetedInteractable == null || !targetedInteractable.CanInteract(this)) return;
         targetedInteractable.Interact(this);
-        targetedInteractable = null;
+        if (!(targetedInteractable is AltarOffering)) targetedInteractable = null;
     }
 
     public void DropSelected()

@@ -50,13 +50,13 @@ public sealed partial class HarvestReview
         yield return Frames(6);
         yield return Target(altar);
         yield return Press(Key.E);
-        Check(world.meatOffered == 1 && world.meat == 9 && quota.ReadyToOffer, "partial offering retains directions");
+        Check(world.meatOffered == 0 && world.meat == 10 && quota.ReadyToOffer, "a tap keeps meat and directions");
         Stage(895, 440.95f, 27.15f);
         yield return Frames(6);
         yield return Open();
         yield return ButtonClick(trade.shop.rows[0].button);
         yield return Press(Key.Escape);
-        Check(world.meat == 5 && !quota.ReadyToOffer && !GameObject.Find("Destination bearings"), "optional purchase hides directions below remaining cost");
+        Check(world.meat == 6 && !quota.ReadyToOffer && !GameObject.Find("Destination bearings"), "optional purchase hides directions below remaining cost");
         var bow = Object.FindObjectsByType<WeaponPickup>().First(w => w.isActiveAndEnabled && w.Definition is WeaponData d && d.useType == WeaponUseType.Bow);
         var at = bow.transform.position;
         Stage(at.x, at.z - 1.7f);

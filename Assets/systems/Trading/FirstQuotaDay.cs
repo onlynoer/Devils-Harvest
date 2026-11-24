@@ -3,67 +3,53 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
+[DefaultExecutionOrder(-40)]
 public sealed class FirstQuotaDay : MonoBehaviour
 {
     public const int RequiredMeat = 10;
     public const int DaySeconds = 480;
     public TMP_Text objective;
+    public TMP_FontAsset displayFont;
+    public AudioClip revealSound;
     private SaveProgress progress;
-    private int shownSeconds = -1, shownOffered = -1, shownMeat = -1, shownResult = -1;
-    public bool Accepting => progress != null && progress.firstQuotaResult == 0;
+    public int Result => progress.firstQuotaResult;
+    public bool Accepting => progress != null && Result == 0 && SecondsLeft > 0;
     public int Remaining => Mathf.Max(0, RequiredMeat - progress.meatOffered);
-
-    public bool ReadyToOffer => Accepting && Remaining > 0 && progress.meat >= Remaining;
-    public float DayFraction => progress == null ? 0f : Mathf.Clamp01(progress.firstDayElapsed / DaySeconds);
+    public int SecondsLeft => Mathf.CeilToInt(Mathf.Max(0, DaySeconds - progress.firstDayElapsed));
+    public int Carried => progress.meat;
+    public bool ReadyToOffer => Accepting && Remaining > 0 && Carried >= Remaining;
+    public float DayFraction => Mathf.Clamp01(progress.firstDayElapsed / DaySeconds);
 
     private void Start()
     {
-        if (objective != null) gameObject.AddComponent<QuotaCompass>().Bind(this, objective);
+        if (objective != null && progress != null)
+        {
+            gameObject.AddComponent<QuotaCompass>().Bind(this, objective);
+            gameObject.AddComponent<OfferingTracker>().Bind(this, SaveGameService.ConsumeNewHarvest());
+        }
         gameObject.AddComponent<IslandDaylight>().Bind(this);
     }
 
-    public void Bind(SaveProgress world) { progress = world; }
+    public void Bind(SaveProgress world) => progress = world;
 
     private void Update()
     {
-        if (progress == null) return;
-        if (Accepting)
+        if (progress == null || GamePause.IsPaused) return;
+        if (Result == 0)
         {
             progress.firstDayElapsed = Mathf.Min(DaySeconds, progress.firstDayElapsed + Time.deltaTime);
-            Evaluate();
+            if (Remaining == 0 || SecondsLeft == 0)
+            {
+                progress.firstQuotaResult = Remaining == 0 ? 1 : 2;
+                SaveGameService.SaveActive();
+            }
         }
-        else if (Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame &&
-                 !GetComponent<HarvestTrade>().IsOpen)
+        else if (Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame && !GetComponent<HarvestTrade>().IsOpen)
         {
             SaveGameService.SaveActive();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             SceneManager.LoadScene("MainMenu");
-            return;
         }
-        int seconds = Mathf.CeilToInt(DaySeconds - progress.firstDayElapsed);
-        if (objective == null || (seconds == shownSeconds && shownOffered == progress.meatOffered &&
-            shownMeat == progress.meat && shownResult == progress.firstQuotaResult)) return;
-        shownSeconds = seconds;
-        shownOffered = progress.meatOffered;
-        shownMeat = progress.meat;
-        shownResult = progress.firstQuotaResult;
-        if (Accepting)
-        {
-            string instruction = ReadyToOffer ? $"Offer {Remaining} at the altar to complete the quota" : $"Bring {Remaining} meat to the mountain altar";
-            objective.text = $"FIRST OFFERING   {seconds / 60}:{seconds % 60:00}\n{instruction}\n{progress.meat} carried   ·   {Mathf.Min(RequiredMeat, progress.meatOffered)}/{RequiredMeat} offered";
-        }
-        else
-            objective.text = (shownResult == 1 ? "FIRST QUOTA MET" : "FIRST QUOTA MISSED") +
-                $"\n{Mathf.Min(RequiredMeat, progress.meatOffered)}/{RequiredMeat} offered   ·   {progress.meat} carried\nExplore, or press Enter for the menu";
-    }
-
-    public void Evaluate()
-    {
-        if (!Accepting) return;
-        if (Remaining == 0) progress.firstQuotaResult = 1;
-        else if (progress.firstDayElapsed >= DaySeconds) progress.firstQuotaResult = 2;
-        else return;
-        SaveGameService.SaveActive();
     }
 }

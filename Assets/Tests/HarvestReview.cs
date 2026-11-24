@@ -199,9 +199,9 @@ public sealed partial class HarvestReview : MonoBehaviour
             throw new Exception("timeout on foot " + to);
     }
 
-    static Queue<Vector2> PathAround(Vector2 start, Vector2 end)
+    static Queue<Vector2> PathAround(Vector2 start, Vector2 end, float gap = 1.5f, int limit = 3500)
     {
-        const float gap = 1.5f;
+
         var terrain = Terrain.activeTerrain;
         Vector3 At(Vector2 pt)
         {
@@ -226,7 +226,7 @@ public sealed partial class HarvestReview : MonoBehaviour
         var parent = new Dictionary<Vector2Int, Vector2Int>();
         var closed = new HashSet<Vector2Int>();
         var walkable = new Dictionary<Vector2Int, bool>();
-        while (open.Count > 0 && closed.Count < 3500)
+        while (open.Count > 0 && closed.Count < limit)
         {
             int best = 0;
             float score = float.MaxValue;
@@ -472,8 +472,18 @@ public sealed partial class HarvestReview : MonoBehaviour
         yield return Press(Key.Enter);
         for (int i = 0; i < 320 && SceneManager.GetActiveScene().name != "DevilsHarvest_Island"; i++)
             yield return null;
-        yield return Frames(100);
+        yield return Frames(6);
         Player();
+        if (routeMode == "day") p.StartCoroutine(CaptureClip("01-reveal", 50));
+        var day = p.GetComponent<FirstQuotaDay>();
+        Check(day.objective.text.Contains("before nightfall"), "fresh harvest opens with the live offering demand");
+        yield return Pic(routeMode + "-reveal");
+        yield return Frames(63);
+        yield return Pic(routeMode + "-transition");
+        yield return Frames(31);
+        Check(day.objective.text.Contains("at the altar"), "opening demand condensed into the corner tracker");
+        yield return Pic(routeMode + "-tracker");
+        Check(!Object.FindObjectsByType<Transform>(FindObjectsInactive.Include).Any(t => t.name.EndsWith(" waypost")), "all navigation boards and posts absent");
         Check(p != null, "Start Harvest on island as " + p.name);
         Check(SaveGameService.GetAll().Count(slot => slot.saveName == save) == 1, "single Enter created one save");
         float since = Time.time;
@@ -485,9 +495,19 @@ public sealed partial class HarvestReview : MonoBehaviour
         yield return Target(ak);
         yield return Press(Key.E);
         Check(gun.LoadedAmmo == 150, "first day beach AK");
+        if (routeMode.StartsWith("mountain-"))
+        {
+            yield return MountainCircuit();
+            yield break;
+        }
         if (routeMode == "trail")
         {
             yield return IslandTrail();
+            yield break;
+        }
+        if (routeMode == "offering" || routeMode == "timeout")
+        {
+            yield return OfferingCases(routeMode == "timeout");
             yield break;
         }
         if (after)
@@ -564,8 +584,7 @@ public sealed partial class HarvestReview : MonoBehaviour
         yield return Walk(new Vector2(793, 754.4f));
         var altar = Object.FindAnyObjectByType<AltarOffering>();
         yield return Target(altar);
-        for (int i = 0; i < 10; i++)
-            yield return Press(Key.E);
+        yield return HoldAtAltar(altar);
         Check(SaveGameService.ActiveSave.progress.firstQuotaResult == 1 && trade.Meat == 1, "quota complete with earned meat");
         Debug.Log("DAY outcome elapsed=" + SaveGameService.ActiveSave.progress.firstDayElapsed + " distance=" + distance + " remaining=" + trade.Meat);
         yield return Pic("First quota met");

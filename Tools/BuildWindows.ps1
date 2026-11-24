@@ -26,4 +26,7 @@ if ($result -ne 0 -and $version -eq '6000.5.5f1' -and (Select-String -LiteralPat
     $result = Build-Player
 }
 if ($result -ne 0) { throw "Build failed ($result). See $log" }
+if (!(Select-String -LiteralPath $log -SimpleMatch 'WINDOWS BUILD Succeeded errors=0' -Quiet)) {
+    throw "Unity exited without confirming a successful player build. See $log"
+}
 Write-Output (Join-Path $builds 'Windows/DevilsHarvest.exe')

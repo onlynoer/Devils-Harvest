@@ -96,20 +96,21 @@ public sealed class HarvestTrade : MonoBehaviour
         SaveGameService.SaveActive();
     }
 
-    public bool CanOffer => Meat > 0 && (quota == null || quota.Accepting);
+    public int OfferAmount => quota != null && quota.Accepting ? Mathf.Min(Meat, quota.Remaining) : 0;
+    public string AltarPrompt => OfferAmount > 0 ? $"offer {OfferAmount} meat" :
+        quota != null && quota.Result == 1 ? "Offering accepted. The quota is complete." :
+        quota != null && quota.Result == 2 ? "Nightfall. The altar is closed." :
+        $"No meat to offer. Still owed: {quota?.Remaining ?? 0}";
 
-    public string AltarPrompt => (CanOffer ? "offer 1 meat\n" : "") +
-        "Meat carried: " + Meat + "   |   Offered: " + progress.meatOffered +
-        (quota == null ? "" : quota.Accepting ? "   |   Still due: " + quota.Remaining :
-            progress.firstQuotaResult == 1 ? "   |   Quota met" : "   |   Deadline passed");
-
-    public void OfferMeat()
+    public int OfferMeat()
     {
-        if (!CanOffer) return;
-        progress.meat--;
-        progress.meatOffered++;
-        if (quota != null) quota.Evaluate();
+        int amount = OfferAmount;
+        if (amount <= 0) return 0;
+        progress.meat -= amount;
+        progress.meatOffered += amount;
+        if (quota.Remaining == 0) progress.firstQuotaResult = 1;
         SaveGameService.SaveActive();
+        return amount;
     }
 
     private void Update()

@@ -1,6 +1,16 @@
 # Devil's Harvest playtest handoff
 
-## Current Windows follow-up
+## Current island and offering playtest
+
+Launch `Builds/Windows/DevilsHarvest.exe` and choose **New Game → Main Level → Start Harvest**. The opening banner gives the demand and deadline, then moves into the upper-right corner. Follow the opening in the beach trail to hunt. The altar and dealer arrows appear when the carried meat covers the outstanding quota. At the saddle altar, aim at the slab and hold the displayed interact button for 0.8 seconds.
+
+The five wooden wayposts have been removed. The rear shoulders of the twin peaks rise about 8 m higher in two localized areas. Three isolated rock pieces were removed and 53 outcrops were seated into the hillside. A heightmap readback found the western summit at 159.26 m, the eastern summit at 164.65 m and the sample beside the altar at 137.26 m.
+
+The Windows opening-day replay hunted three prey for 15 meat, spent four at the grotto, offered ten at the shrine in one hold and reloaded with one meat. The focused replays use a simulated keyboard and mouse through the normal input system. They stage balances and clock positions for early release, walking away, partial payment and reload, a full payment with surplus, continued holding, pause and expiry mid-hold. The mountain circuit walks from the grotto to the altar and around the rear of the mountain. The encounter replay also checks giant pursuit, escape and reacquisition.
+
+The matched player-height trail and distant overlook images are in `Builds/Windows/PlaytestEvidence` under `mountain-before-` and `mountain-after-`. The same folder contains the 1080p opening-day and 1440p offering screenshots and `Offering-playtest.mp4`, a silent clip of the banner transition and the held offering. The HUD and terrain checks can be repeated by launching the player with `-dh-review day`, `offering`, `timeout`, `mountain-after`, or `trail` as the review mode.
+
+## Earlier Windows follow-up
 
 This pass starts at `164dcebc31fdea273537d68e898c887cdae8c88b` on the same local branch. Run `Builds/Windows/DevilsHarvest.exe` with the complete Windows folder. The earlier beta handoff below records the starting build.
 
