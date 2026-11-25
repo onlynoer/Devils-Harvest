@@ -52,6 +52,16 @@ Shader "DevilsHarvest/CoastalWater"
                 float3 halfway = normalize(normalize(GetWorldSpaceViewDir(input.world)) + sun.direction);
                 color.rgb += sun.color * pow(saturate(dot(normal, halfway)), 160) * 0.45;
                 color.rgb = MixFog(color.rgb, input.fog);
+                // Beyond the playable coast the grid rises into a haze skirt. Blend it
+                // into the actual sky so the horizon tracks changes in daylight.
+                float3 fromEye = input.world - GetCameraPositionWS();
+                float seaDistance = length(fromEye.xz);
+                half haze = smoothstep(650.0, 3400.0, seaDistance);
+                color.rgb = lerp(color.rgb, unity_FogColor.rgb, haze);
+                // Only the shallows reveal the sea floor. The submerged terrain perimeter
+                // otherwise prints a rectangular silhouette through the deep-water color.
+                color.a = lerp(color.a, 1.0, max(haze, smoothstep(2.0, 9.0, thickness)));
+                color.a *= 1.0 - haze * smoothstep(0.002, 0.078, fromEye.y / max(seaDistance, 1.0));
                 return color;
             }
             ENDHLSL

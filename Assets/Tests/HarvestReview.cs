@@ -495,6 +495,11 @@ public sealed partial class HarvestReview : MonoBehaviour
         yield return Target(ak);
         yield return Press(Key.E);
         Check(gun.LoadedAmmo == 150, "first day beach AK");
+        if (routeMode.StartsWith("coast-"))
+        {
+            yield return CoastalTrailCircuit();
+            yield break;
+        }
         if (routeMode.StartsWith("mountain-"))
         {
             yield return MountainCircuit();
