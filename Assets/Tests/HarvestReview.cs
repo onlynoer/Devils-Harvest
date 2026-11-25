@@ -494,7 +494,10 @@ public sealed partial class HarvestReview : MonoBehaviour
         yield return Walk(XZ(ak.transform.position) + Vector2.down * 1.5f);
         yield return Target(ak);
         yield return Press(Key.E);
-        Check(gun.LoadedAmmo == 150, "first day beach AK");
+        Check(gun.LoadedAmmo == 30 && gun.Inventory.Selected.ReserveAmmo == 120, "beach AK 30 / 120");
+        if (routeMode == "magazines") { yield return MagazineCases(); yield break; }
+        if (routeMode.StartsWith("encounter-")) { yield return EncounterPressure(); yield break; }
+        if (routeMode.StartsWith("passing-")) { yield return PassingHostile(routeMode.Substring(8)); yield break; }
         if (routeMode.StartsWith("coast-"))
         {
             yield return CoastalTrailCircuit();
@@ -534,7 +537,7 @@ public sealed partial class HarvestReview : MonoBehaviour
             var candidates = Object.FindObjectsByType<CreatureAI>().OrderBy(c => Vector2.Distance(XZ(c.transform.position), XZ(eye))).ToArray();
             foreach (var ai in candidates)
             {
-                if (!ai || Vector3.Distance(eye, ai.transform.position) > 64)
+                if (!ai || Vector3.Distance(eye, ai.transform.position) > 42)
                     continue;
                 var c = ai.GetComponent<Creature>();
                 var cc = c.GetComponent<CharacterController>();
@@ -546,6 +549,7 @@ public sealed partial class HarvestReview : MonoBehaviour
                 {
                     if (!Sight(c, gun.playerCamera.transform.position))
                         break;
+                    if (gun.LoadedAmmo == 0 && gun.Inventory.Selected.CanReload) yield return ReloadFully();
                     Face(cc.bounds.center);
                     yield return Frames(1);
                     yield return Click(Vector2.zero);

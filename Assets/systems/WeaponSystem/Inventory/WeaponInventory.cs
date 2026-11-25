@@ -72,14 +72,16 @@ public sealed class WeaponInventory : MonoBehaviour
 
     /// <summary>Puts the item in the first empty slot and selects it. Returns false when the hotbar is full.</summary>
     /// <param name="loadedAmmo">Ammo in the weapon; -1 means full.</param>
-    public bool TryAdd(InventoryItemData definition, int loadedAmmo = -1)
+    public bool TryAdd(InventoryItemData definition, int loadedAmmo = -1, int reserve = -1, string originId = null, int preferredSlot = -1)
     {
         if (definition == null) return false;
         EnsureSlots();
-        for (int i = 0; i < Capacity; i++)
+        int first = preferredSlot >= 0 && preferredSlot < Capacity ? preferredSlot : 0;
+        for (int offset = 0; offset < Capacity; offset++)
         {
+            int i = (first + offset) % Capacity;
             if (IsOccupied(i)) continue;
-            slots[i] = new WeaponInstance(definition, loadedAmmo);
+            slots[i] = new WeaponInstance(definition, loadedAmmo, reserve, originId);
             Select(i);
             return true;
         }

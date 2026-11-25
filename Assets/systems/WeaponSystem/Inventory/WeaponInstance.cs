@@ -1,42 +1,52 @@
 using System;
 using UnityEngine;
 
-/// <summary>
-/// One specific item the player is carrying (e.g. "this AK47 with 12 bullets left").
-/// The shared stats come from <see cref="ItemDefinition"/>; per-copy state like ammo lives here.
-/// </summary>
 [Serializable]
 public sealed class WeaponInstance
 {
     [SerializeField] private string instanceId;
     [SerializeField] private InventoryItemData itemDefinition;
     [SerializeField] private int loadedAmmo;
+    [SerializeField] private int reserveAmmo;
 
     public string InstanceId => instanceId;
+    public string OriginId { get; }
     public InventoryItemData ItemDefinition => itemDefinition;
-    /// <summary>The definition as weapon data, or null for non-weapon items.</summary>
     public WeaponData Definition => itemDefinition as WeaponData;
-
     public int LoadedAmmo
     {
         get => loadedAmmo;
-        set => loadedAmmo = Definition != null ? Mathf.Clamp(value, 0, Definition.maxAmmo) : 0;
+        set => loadedAmmo = Definition ? Mathf.Clamp(value, 0, Definition.Capacity) : 0;
     }
+    public int ReserveAmmo => reserveAmmo;
+    public bool NeedsAmmo => Definition && loadedAmmo + reserveAmmo < Definition.maxAmmo;
+    public bool CanReload => Definition && Definition.useType == WeaponUseType.Gun && loadedAmmo < Definition.Capacity && reserveAmmo > 0;
 
-    /// <summary>True for a weapon that has less than its max ammo.</summary>
-    public bool NeedsAmmo => Definition != null && loadedAmmo < Definition.maxAmmo;
-
-    /// <summary>Fills the weapon back up to its max ammo.</summary>
-    public void Refill()
-    {
-        if (Definition != null) LoadedAmmo = Definition.maxAmmo;
-    }
-
-    /// <param name="loadedAmmo">Ammo in the weapon; -1 means full.</param>
-    public WeaponInstance(InventoryItemData definition, int loadedAmmo)
+    // A missing reserve denotes a legacy total, including on authored world pickups.
+    public WeaponInstance(InventoryItemData definition, int ammo, int reserve = -1, string originId = null)
     {
         instanceId = Guid.NewGuid().ToString("N");
         itemDefinition = definition;
-        LoadedAmmo = definition is WeaponData weapon && loadedAmmo < 0 ? weapon.maxAmmo : loadedAmmo;
+        OriginId = originId;
+        if (!Definition) return;
+        int total = ammo < 0 ? Definition.maxAmmo : Mathf.Clamp(ammo, 0, Definition.maxAmmo);
+        LoadedAmmo = total;
+        if (Definition.useType == WeaponUseType.Gun)
+            reserveAmmo = reserve < 0 ? total - loadedAmmo : Mathf.Clamp(reserve, 0, Definition.maxAmmo - loadedAmmo);
+    }
+
+    public void Refill()
+    {
+        if (!Definition) return;
+        if (Definition.useType == WeaponUseType.Gun) reserveAmmo = Definition.maxAmmo - loadedAmmo;
+        else LoadedAmmo = Definition.maxAmmo;
+    }
+
+    public void CompleteReload()
+    {
+        if (!CanReload) return;
+        int rounds = Mathf.Min(Definition.Capacity - loadedAmmo, reserveAmmo);
+        loadedAmmo += rounds;
+        reserveAmmo -= rounds;
     }
 }

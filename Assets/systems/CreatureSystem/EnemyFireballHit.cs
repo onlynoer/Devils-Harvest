@@ -7,7 +7,9 @@ public sealed class EnemyFireballHit : MonoBehaviour
 
     private Projectile projectile;
 
-    void Start()
+    private bool spent;
+
+    void Awake()
     {
         projectile = GetComponent<Projectile>();
         Destroy(gameObject, lifetime);
@@ -25,9 +27,10 @@ public sealed class EnemyFireballHit : MonoBehaviour
 
     void HandleHit(Collider other)
     {
-        if (projectile == null)
+        if (spent || projectile == null || (other.isTrigger && other.GetComponentInParent<Player>() == null))
             return;
 
+        spent = true;
         Vector3 damageDirection = Vector3.zero;
 
         Rigidbody rb = GetComponent<Rigidbody>();
@@ -56,5 +59,3 @@ public sealed class EnemyFireballHit : MonoBehaviour
         Destroy(gameObject);
     }
 }
-
-

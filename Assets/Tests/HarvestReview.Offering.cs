@@ -11,9 +11,9 @@ using Object = UnityEngine.Object;
 public sealed partial class HarvestReview
 {
     // Two simulation frames per video frame at the replay's fixed 30 Hz.
-    static IEnumerator CaptureClip(string shot, int count)
+    static IEnumerator CaptureClip(string shot, int count, string directory = "OfferingCapture")
     {
-        var folder = Path.Combine(Output, "OfferingCapture");
+        var folder = Path.Combine(Output, directory);
         Directory.CreateDirectory(folder);
         for (int i = 0; i < count; i++)
         {

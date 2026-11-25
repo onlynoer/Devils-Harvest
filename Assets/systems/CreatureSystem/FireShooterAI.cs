@@ -30,6 +30,10 @@ public class FireShooterAI : MonoBehaviour
     private bool casting;
     private int strafeSide = 1;
     private Vector3 markedTarget;
+    public bool IsMarking => casting;
+    [Min(1f)] public float pursuitSpeed = 9f;
+    [Min(1f)] public float markedShotSpeed = 34f;
+    [Min(0f)] public float extraCastingRange = 9f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetCastSpacing() => nextGroupCast = 0f;
@@ -88,11 +92,11 @@ public class FireShooterAI : MonoBehaviour
             return;
         }
 
-        if (!isAggressive && distance <= detectionRange)
+        if (!isAggressive && distance <= detectionRange + extraCastingRange)
         {
             isAggressive = true;
         }
-        else if (isAggressive && distance > loseTargetRange)
+        else if (isAggressive && distance > loseTargetRange + extraCastingRange)
         {
             isAggressive = false;
             SetCasting(false);
@@ -115,10 +119,10 @@ public class FireShooterAI : MonoBehaviour
                 return;
             }
             var toward = Vector3.ProjectOnPlane(player.transform.position - transform.position, Vector3.up).normalized;
-            Vector3 travel = distance > shootingRange ? toward : distance < 5f ? -toward : Vector3.Cross(Vector3.up,toward) * strafeSide;
-            Move(travel, walkSpeed);
+            Vector3 travel = distance > shootingRange + extraCastingRange ? toward : distance < 5f ? -toward : Vector3.Cross(Vector3.up,toward) * strafeSide;
+            Move(travel, distance > shootingRange + extraCastingRange ? pursuitSpeed : walkSpeed);
             animator.SetFloat("Speed", .65f);
-            if (distance <= shootingRange && Time.time >= nextShotTime && Time.time >= nextGroupCast && fireballSpawn != null)
+            if (distance <= shootingRange + extraCastingRange && Time.time >= nextShotTime && Time.time >= nextGroupCast && fireballSpawn != null)
             {
                 var capsule = player.GetComponent<CharacterController>();
                 markedTarget = capsule != null ? capsule.bounds.center : player.transform.position;
@@ -243,6 +247,9 @@ public class FireShooterAI : MonoBehaviour
         if (fireballPrefab == null || fireballSpawn == null)
             return;
 
+        // Recheck the firing lane at release. The physical projectile handles cover entered in flight.
+        if (Physics.Linecast(fireballSpawn.position, markedTarget, out var obstruction, Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Ignore) && obstruction.collider.GetComponentInParent<Player>() != player) return;
         Vector3 direction = (markedTarget - fireballSpawn.position).normalized;
 
         GameObject fireball = Instantiate(
@@ -265,10 +272,9 @@ public class FireShooterAI : MonoBehaviour
 
         if (rb != null)
         {
-            rb.linearVelocity = direction * fireballSpeed;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.linearVelocity = direction * markedShotSpeed;
         }
 
     }
 }
-
-

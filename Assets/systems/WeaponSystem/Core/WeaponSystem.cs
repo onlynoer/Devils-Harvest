@@ -45,11 +45,16 @@ public sealed class WeaponSystem : MonoBehaviour
     private FirstPersonLook look;
     private float normalFov, aimBlend, kick;
     private bool awaitAimRelease, automaticHeld;
+    private WeaponInstance reloading;
+    private float reloadElapsed;
+    public bool IsReloading => reloading != null && reloading == Inventory.Selected;
+    public float ReloadProgress => IsReloading ? Mathf.Clamp01(reloadElapsed / reloading.Definition.reloadDuration) : 0f;
     public float AimBlend => aimBlend;
     public bool IsAiming => aimBlend > .1f;
 
     private void OnDisable()
     {
+        reloading = null;
         ResetGunView();
         targetedInteractable = null;
     }
@@ -70,7 +75,7 @@ public sealed class WeaponSystem : MonoBehaviour
         if (weapon == null || weapon.useType != WeaponUseType.Gun || playerCamera == null) return;
         bool held = GameInput.IsHeld(GameAction.Aim);
         if (!held) awaitAimRelease = false;
-        float target = held && !awaitAimRelease && GameInput.GameplayEnabled ? 1f : 0f;
+        float target = held && !IsReloading && !awaitAimRelease && GameInput.GameplayEnabled ? 1f : 0f;
         aimBlend = GameInput.GameplayEnabled ? Mathf.MoveTowards(aimBlend, target, Time.deltaTime * 8f) : 0f;
         playerCamera.fieldOfView = Mathf.Lerp(normalFov, normalFov * weapon.aimFieldOfViewScale, aimBlend);
         kick = Mathf.MoveTowards(kick, 0f, Time.deltaTime * 6f);
@@ -161,6 +166,22 @@ public sealed class WeaponSystem : MonoBehaviour
         if (Mouse.current != null) SelectFromScrollWheel(Mouse.current.scroll.ReadValue().y);
         if (!isActiveAndEnabled) return;
         var selected = inventory.Selected;
+        if (selected != reloading) reloading = null;
+        if (reloading != null)
+        {
+            reloadElapsed += Time.deltaTime;
+            if (reloadElapsed < reloading.Definition.reloadDuration) return;
+            reloading.CompleteReload();
+            reloading = null;
+        }
+        if (GameInput.WasPressed(GameAction.Reload) && selected != null && selected.CanReload)
+        {
+            reloading = selected;
+            reloadElapsed = 0f;
+            automaticHeld = false;
+            Audio.Play(selected.Definition.reloadSound);
+            return;
+        }
         bool pressed = GameInput.WasPressed(GameAction.Attack);
         if (!GameInput.IsHeld(GameAction.Attack) || renderedInstance != selected) automaticHeld = false;
         if (pressed) automaticHeld = selected?.Definition != null && selected.Definition.automatic;
@@ -249,10 +270,10 @@ public sealed class WeaponSystem : MonoBehaviour
         SyncEquippedVisual();
     }
 
-    private void SpawnDropped(WeaponInstance item)
+    public WeaponPickup SpawnDropped(WeaponInstance item)
     {
         InventoryItemData definition = item.ItemDefinition;
-        if (definition == null || definition.ModelPrefab == null) return;
+        if (definition == null || definition.ModelPrefab == null) return null;
         WeaponData weapon = item.Definition;
 
         Transform origin = playerCamera != null ? playerCamera.transform : transform;
@@ -266,7 +287,7 @@ public sealed class WeaponSystem : MonoBehaviour
 
         WeaponPickup pickup = dropped.GetComponent<WeaponPickup>();
         if (pickup == null) pickup = dropped.AddComponent<WeaponPickup>();
-        pickup.SetItem(definition, item.LoadedAmmo);
+        pickup.SetItem(definition, item.LoadedAmmo, item.ReserveAmmo, item.OriginId);
 
         if (dropped.GetComponentInChildren<Collider>(true) == null)
         {
@@ -280,6 +301,7 @@ public sealed class WeaponSystem : MonoBehaviour
         if (body == null) body = dropped.AddComponent<Rigidbody>();
         body.isKinematic = false;
         body.useGravity = true;
+        return pickup;
     }
 
     private static Bounds GetLocalRendererBounds(Transform root, Renderer[] renderers)
@@ -352,6 +374,12 @@ public sealed class WeaponSystem : MonoBehaviour
             offset.z -= kick * .06f;
             model.position += eye.TransformVector(offset);
             model.RotateAround(model.position, eye.right, -kick * 4f);
+            if (IsReloading)
+            {
+                float dip = Mathf.Sin(Mathf.PI * ReloadProgress);
+                model.position -= eye.up * (.14f * dip);
+                model.RotateAround(model.position, eye.forward, -22f * dip);
+            }
         }
     }
 

@@ -11,6 +11,14 @@ public class AmmoPickup : MonoBehaviour, IInteractable
     [Tooltip("Prompt when the selected weapon is already full.")]
     [SerializeField] private string fullPrompt = "Ammo full";
 
+    private string saveId;
+    private void Start()
+    {
+        saveId = WeaponPickup.SceneKey(transform);
+        if (SaveGameService.ActiveSave?.progress.spentAmmoBoxes?.Contains(saveId) == true)
+            gameObject.SetActive(false);
+    }
+
     private WeaponData cachedPromptWeapon;
     private string cachedPrompt;
 
@@ -23,7 +31,7 @@ public class AmmoPickup : MonoBehaviour, IInteractable
         if (cachedPromptWeapon != weapon)
         {
             cachedPromptWeapon = weapon;
-            cachedPrompt = "reload " + weapon.DisplayName;
+            cachedPrompt = "refill " + weapon.DisplayName;
         }
         return cachedPrompt;
     }
@@ -38,7 +46,14 @@ public class AmmoPickup : MonoBehaviour, IInteractable
     {
         if (!CanInteract(user)) return;
         user.Inventory.Selected.Refill();
+        var progress = SaveGameService.ActiveSave?.progress;
+        if (progress != null)
+        {
+            if (progress.spentAmmoBoxes == null) progress.spentAmmoBoxes = new System.Collections.Generic.List<string>();
+            if (!progress.spentAmmoBoxes.Contains(saveId)) progress.spentAmmoBoxes.Add(saveId);
+        }
         user.Audio.Play(user.Inventory.Selected.Definition.reloadSound);
         gameObject.SetActive(false);
+        SaveGameService.SaveActive();
     }
 }

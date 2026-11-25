@@ -30,10 +30,10 @@ public sealed class Mp5Burst : MonoBehaviour
         {
             while (Time.time < next)
             {
-                if (player.IsDead || !weapons.isActiveAndEnabled || weapons.Inventory.Selected != slot) yield break;
+                if (player.IsDead || weapons.IsReloading || !weapons.isActiveAndEnabled || weapons.Inventory.Selected != slot) yield break;
                 yield return null;
             }
-            if (player.IsDead || !weapons.isActiveAndEnabled || weapons.Inventory.Selected != slot || slot.LoadedAmmo == 0) yield break;
+            if (player.IsDead || weapons.IsReloading || !weapons.isActiveAndEnabled || weapons.Inventory.Selected != slot || slot.LoadedAmmo == 0) yield break;
             var direction = weapons.GetAimDirection(slot.Definition, weapons.bulletSpawn);
             var projectile = Instantiate(projectilePrefab, weapons.bulletSpawn.position, Quaternion.LookRotation(direction));
             projectile.GetComponent<Projectile>().SetDamage(damage);

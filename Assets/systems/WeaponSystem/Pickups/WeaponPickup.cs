@@ -14,6 +14,21 @@ public class WeaponPickup : MonoBehaviour, IInteractable
     [Tooltip("Ammo in the weapon. -1 = full. Dropped weapons keep their remaining ammo.")]
     [SerializeField] private int loadedAmmo = -1;
 
+    private int reserveAmmo = -1;
+    public int ReserveAmmo => reserveAmmo;
+    public string OriginId { get; private set; }
+
+    internal static string SceneKey(Transform node)
+    {
+        // Authored siblings can share names. Include their position in the serialized hierarchy.
+        string path = "";
+        for (var t = node; t != null; t = t.parent)
+            path = "/" + t.name + "#" + t.GetSiblingIndex() + path;
+        return node.gameObject.scene.path + path;
+    }
+
+    private void Awake() => OriginId = SceneKey(transform);
+
     private InventoryItemData cachedPromptItem;
     private string cachedPrompt;
 
@@ -22,11 +37,13 @@ public class WeaponPickup : MonoBehaviour, IInteractable
     public int LoadedAmmo => loadedAmmo;
 
     /// <summary>Configures a pickup at runtime (used when the player drops an item).</summary>
-    public void SetItem(InventoryItemData definition, int ammo)
+    public void SetItem(InventoryItemData definition, int ammo, int reserve = -1, string originId = null)
     {
         itemData = definition;
         weaponData = null;
         loadedAmmo = Mathf.Max(0, ammo);
+        reserveAmmo = reserve;
+        OriginId = originId;
     }
 
     public string GetPrompt(WeaponSystem user)
@@ -51,7 +68,7 @@ public class WeaponPickup : MonoBehaviour, IInteractable
 
     public void Interact(WeaponSystem user)
     {
-        if (!CanInteract(user) || !user.Inventory.TryAdd(Definition, loadedAmmo)) return;
+        if (!CanInteract(user) || !user.Inventory.TryAdd(Definition, loadedAmmo, reserveAmmo, OriginId)) return;
         gameObject.SetActive(false);
     }
 }

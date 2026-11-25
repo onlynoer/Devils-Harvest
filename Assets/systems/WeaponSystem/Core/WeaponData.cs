@@ -42,6 +42,9 @@ public class WeaponData : InventoryItemData
     public int maxAmmo = 20;
 
     [Header("Gun handling")]
+    [Min(1)] public int magazineSize = 30;
+    [Min(.1f)] public float reloadDuration = 2f;
+    public int Capacity => useType == WeaponUseType.Gun ? Mathf.Clamp(magazineSize, 1, Mathf.Max(1, maxAmmo)) : maxAmmo;
     public GunSightStyle sightStyle;
     [Tooltip("Top of the physical sight in the equipped model's local coordinates.")]
     public Vector3 sightReference;

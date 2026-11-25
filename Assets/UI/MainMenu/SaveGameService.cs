@@ -17,6 +17,8 @@ public sealed class SaveProgress
     public float firstDayElapsed;
     public int firstQuotaResult; // 0 active, 1 met, 2 expired
     public string equippedDealerId;
+    public List<DealerWeaponSave> fieldGuns = new List<DealerWeaponSave>();
+    public List<string> spentAmmoBoxes = new List<string>();
     public List<DealerWeaponSave> dealerWeapons = new List<DealerWeaponSave>();
     public List<string> exploredCaches = new List<string>();
     public List<SavedBoost> activeBoosts = new List<SavedBoost>();
@@ -37,6 +39,12 @@ public sealed class DealerWeaponSave
     public string id;
     public int ammo;
     public bool dropped;
+    public bool hasMagazine;
+    public int reserve;
+    public int slot;
+    public Vector3 dropPosition;
+    public Quaternion dropRotation;
+    public int SavedReserve => hasMagazine ? reserve : -1;
 }
 
 /// <summary>Serializable save record for one named world.</summary>

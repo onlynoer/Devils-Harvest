@@ -29,6 +29,15 @@ public class MonsterAI : MonoBehaviour
     public float attackHitDelay = 0.5f;
     public float attackCooldown = 1.5f;
 
+    [Header("Committed charge")]
+    public float lungeStartRange = 9f;
+    public float pursuitSpeed = 18f;
+    public float lungeSpeed = 40f;
+    public float lungeWindup = .43f;
+    public float lungeDuration = .72f;
+    public bool WindingUp => isAttacking && attackTimer < lungeWindup;
+    public bool Recovering => isAttacking && attackTimer >= lungeWindup + lungeDuration;
+
     private bool isWalking;
     private bool isAggressive;
     private bool isAttacking;
@@ -69,7 +78,7 @@ public class MonsterAI : MonoBehaviour
         }
 
         // Return to passive mode if the player escapes.
-        if (isAggressive && distance > loseTargetRange)
+        if (isAggressive && !isAttacking && distance > loseTargetRange)
         {
             isAggressive = false;
             isAttacking = false;
@@ -85,13 +94,12 @@ public class MonsterAI : MonoBehaviour
 
         if (isAggressive)
         {
-            if (distance <= attackRange)
+            if (distance <= lungeStartRange && cooldownTimer <= 0f)
             {
                 StopMoving();
                 FacePlayer();
 
-                if (cooldownTimer <= 0f)
-                    StartAttack();
+                StartAttack();
             }
             else
             {
@@ -165,7 +173,7 @@ public class MonsterAI : MonoBehaviour
         direction.y = 0f;
         direction.Normalize();
 
-        Move(direction, runSpeed);
+        Move(direction, pursuitSpeed);
         animator.SetFloat("Speed", 1f);
     }
 
@@ -245,6 +253,9 @@ public class MonsterAI : MonoBehaviour
         attackTimer = 0f;
         lungeDirection = Vector3.ProjectOnPlane(player.transform.position-transform.position,Vector3.up).normalized;
 
+        if (lungeDirection.sqrMagnitude > .001f) transform.rotation = Quaternion.LookRotation(lungeDirection);
+        var creature = GetComponent<Creature>();
+        if (creature && creature.Sounds) creature.Sounds.Signal(creature.creatureData.attack);
         animator.SetBool("IsAttacking", true);
     }
 
@@ -252,31 +263,31 @@ public class MonsterAI : MonoBehaviour
     {
         attackTimer += Time.deltaTime;
 
-        // Commit to a short straight lunge after the tell. Misses leave the same recovery window.
-        if (attackTimer >= attackHitDelay - .18f && attackTimer < attackHitDelay + .05f)
-            Move(lungeDirection, runSpeed);
+        // A fixed line after the windup lets the player step across the charge.
+        float chargeTime = attackTimer - lungeWindup;
+        if (chargeTime >= 0f && chargeTime <= lungeDuration)
+        {
+            Move(lungeDirection, lungeSpeed);
+            Vector3 offset = player.transform.position - transform.position;
+            Vector3 planar = Vector3.ProjectOnPlane(offset, Vector3.up);
+            if (!hasHitPlayer && planar.magnitude <= attackRange && Mathf.Abs(offset.y) < 3f &&
+                Vector3.Dot(planar,lungeDirection) > -.5f)
+            {
+                player.TakeDamage(attackDamage);
+                hasHitPlayer = true;
+            }
+        }
         else ApplyGravity();
 
-        if (!hasHitPlayer && attackTimer >= attackHitDelay)
-        {
-            float distance = Vector3.Distance(
-                transform.position,
-                player.transform.position
-            );
-
-            if (distance <= attackRange + .3f && Vector3.Dot(lungeDirection, Vector3.ProjectOnPlane(player.transform.position-transform.position,Vector3.up).normalized) > .4f)
-                player.TakeDamage(attackDamage);
-
-            hasHitPlayer = true;
-        }
-
-        if (attackTimer >= attackDuration)
+        if (attackTimer >= lungeWindup + lungeDuration + .85f)
         {
             isAttacking = false;
 
             animator.SetBool("IsAttacking", false);
 
             cooldownTimer = attackCooldown;
+            var creature = GetComponent<Creature>();
+            if (creature && creature.Sounds) creature.Sounds.FinishAttack();
         }
     }
 }

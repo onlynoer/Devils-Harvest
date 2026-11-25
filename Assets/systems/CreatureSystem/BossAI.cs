@@ -30,6 +30,17 @@ public class BossAI : MonoBehaviour
     public float attackHitDelay = 0.5f;
     public float attackCooldown = 1.5f;
 
+    [Header("Saddle pursuit")]
+    public float pursuitSpeed = 18.5f;
+    public float swingStartRange = 10f;
+    public float stepSpeed = 13f;
+    public bool WindingUp => isAttacking && attackTimer < attackHitDelay;
+    public bool Recovering => isAttacking && hasHitPlayer;
+    private Vector3 swingDirection;
+    private float swingAdvance;
+    private Vector3 detourDirection;
+    private float detourUntil;
+
     private Creature creature;
     private bool isWalking;
     private bool isChasing;
@@ -90,20 +101,17 @@ public class BossAI : MonoBehaviour
         if (isAttacking)
         {
             UpdateAttack();
-            ApplyGravity();
             return;
         }
 
         if (isChasing)
         {
-            if (distance <= attackRange)
+            if (distance <= swingStartRange && cooldownTimer <= 0f)
             {
                 StopMoving();
 
-                if (cooldownTimer <= 0f)
-                    StartAttack();
+                StartAttack();
 
-                FacePlayer();
             }
             else
             {
@@ -174,8 +182,27 @@ public class BossAI : MonoBehaviour
         direction.y = 0f;
         direction.Normalize();
 
-        Move(direction, runSpeed);
+        var desired = Time.time < detourUntil ? detourDirection : direction;
+        Vector3 before = transform.position;
+        Move(desired, pursuitSpeed);
+        float advanced = Vector3.Dot(transform.position - before, desired);
+        if (advanced < pursuitSpeed * Time.deltaTime * .22f && Time.time >= detourUntil)
+        {
+            // At a steep bank or tree, give the controller room to round the obstruction.
+            Vector3 left = Quaternion.AngleAxis(-58, Vector3.up) * direction;
+            Vector3 right = Quaternion.AngleAxis(58, Vector3.up) * direction;
+            detourDirection = Clearance(left) > Clearance(right) ? left : right;
+            detourUntil = Time.time + .48f;
+        }
         animator.SetFloat("Speed", 1f);
+    }
+
+    private float Clearance(Vector3 direction)
+    {
+        float radius = controller.bounds.extents.x * .75f;
+        Vector3 origin = controller.bounds.center - Vector3.up * (controller.bounds.extents.y * .4f);
+        return Physics.SphereCast(origin, radius, direction, out var hit, 9f, Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Ignore) ? hit.distance : 9f;
     }
 
     void Move(Vector3 direction, float speed)
@@ -252,6 +279,10 @@ public class BossAI : MonoBehaviour
     {
         if (creature != null && creature.Sounds != null)
             creature.Sounds.Signal(creature.creatureData.attack);
+        var offset = Vector3.ProjectOnPlane(player.transform.position - transform.position, Vector3.up);
+        swingDirection = offset.normalized;
+        swingAdvance = Mathf.Max(0, offset.magnitude - attackRange * .7f);
+        if (swingDirection.sqrMagnitude > .001f) transform.rotation = Quaternion.LookRotation(swingDirection);
         isAttacking = true;
         hasHitPlayer = false;
         attackTimer = 0f;
@@ -262,6 +293,14 @@ public class BossAI : MonoBehaviour
     void UpdateAttack()
     {
         attackTimer += Time.deltaTime;
+
+        if (attackTimer >= attackHitDelay - .35f && attackTimer < attackHitDelay + .07f && swingAdvance > 0 && Time.deltaTime > 0)
+        {
+            float step = Mathf.Min(swingAdvance, stepSpeed * Time.deltaTime);
+            Move(swingDirection, step / Time.deltaTime);
+            swingAdvance -= step;
+        }
+        else ApplyGravity();
 
         // Hold the facing chosen at windup. Stepping aside evades the committed swing.
         if (attackVisual != null)
@@ -279,7 +318,7 @@ public class BossAI : MonoBehaviour
                 player.transform.position
             );
 
-            if (distance <= attackRange + 0.3f && Vector3.Angle(transform.forward, Vector3.ProjectOnPlane(player.transform.position - transform.position, Vector3.up)) <= 64f)
+            if (distance <= attackRange + 1.4f && Vector3.Angle(swingDirection, Vector3.ProjectOnPlane(player.transform.position - transform.position, Vector3.up)) <= 58f)
                 player.TakeDamage(attackDamage);
 
             hasHitPlayer = true;

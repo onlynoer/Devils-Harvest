@@ -35,46 +35,86 @@ public sealed class HarvestTrade : MonoBehaviour
     private void Start()
     {
         shop.Bind(this, dealer);
-        int selected = -1;
+        if (progress.fieldGuns == null) progress.fieldGuns = new List<DealerWeaponSave>();
+        var pickups = FindObjectsByType<WeaponPickup>();
+        foreach (var saved in progress.fieldGuns)
+        {
+            var original = System.Array.Find(pickups, pickup => pickup.OriginId == saved.id);
+            if (!original || !(original.Definition is WeaponData definition)) continue;
+            original.gameObject.SetActive(false);
+            RestoreWeapon(saved, definition);
+        }
         foreach (var offer in dealer.stock)
         {
             var saved = Owned(offer);
-            if (saved == null || saved.dropped || !weapons.Inventory.TryAdd(offer.weapon, saved.ammo)) continue;
-            if (offer.id == progress.equippedDealerId) selected = weapons.Inventory.SelectedIndex;
+            if (saved != null) RestoreWeapon(saved, offer.weapon);
         }
+        int selected = SlotWithOrigin(progress.equippedDealerId);
         if (selected >= 0) weapons.Inventory.Select(selected);
         else if (weapons.Inventory.Count > 0)
-        {
             for (int i = 0; i < weapons.Inventory.Capacity; i++)
                 if (weapons.Inventory.GetSlot(i) == null) { weapons.Inventory.Select(i); break; }
-        }
         SaveGameService.BeforeSave += CaptureInventory;
+    }
+
+    private void RestoreWeapon(DealerWeaponSave saved, WeaponData definition)
+    {
+        if (!saved.dropped)
+        {
+            weapons.Inventory.TryAdd(definition, saved.ammo, saved.SavedReserve, saved.id, saved.hasMagazine ? saved.slot : -1);
+            return;
+        }
+        if (!saved.hasMagazine) return; // Old dropped purchases are reclaimable at the counter.
+        var item = new WeaponInstance(definition, saved.ammo, saved.reserve, saved.id);
+        var pickup = weapons.SpawnDropped(item);
+        if (pickup) pickup.transform.SetPositionAndRotation(saved.dropPosition, saved.dropRotation);
+    }
+
+    private int SlotWithOrigin(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return -1;
+        for (int i = 0; i < weapons.Inventory.Capacity; i++)
+            if (weapons.Inventory.GetSlot(i)?.OriginId == id) return i;
+        return -1;
     }
 
     private void OnDestroy() => SaveGameService.BeforeSave -= CaptureInventory;
 
+    private DealerWeaponSave Record(string id)
+    {
+        var record = progress.dealerWeapons.Find(s => s.id == id) ?? progress.fieldGuns.Find(s => s.id == id);
+        if (record != null) return record;
+        record = new DealerWeaponSave { id = id };
+        progress.fieldGuns.Add(record);
+        return record;
+    }
+
     private void CaptureInventory(SaveProgress saving)
     {
         if (saving != progress) return;
-        progress.equippedDealerId = "";
-        foreach (var offer in dealer.stock)
+        progress.equippedDealerId = weapons.Inventory.Selected?.OriginId;
+        for (int i = 0; i < weapons.Inventory.Capacity; i++)
         {
-            var saved = Owned(offer);
-            if (saved == null) continue;
-            int index = FindSlot(offer.weapon);
-            if (index < 0)
-            {
-                if (!saved.dropped)
-                {
-                    var dropped = FindDropped(offer.weapon);
-                    if (dropped != null) saved.ammo = dropped.LoadedAmmo;
-                }
-                saved.dropped = true;
-                continue;
-            }
+            var item = weapons.Inventory.GetSlot(i);
+            if (item?.Definition == null || item.Definition.useType != WeaponUseType.Gun || string.IsNullOrEmpty(item.OriginId)) continue;
+            var saved = Record(item.OriginId);
+            saved.ammo = item.LoadedAmmo;
+            saved.reserve = item.ReserveAmmo;
+            saved.hasMagazine = true;
             saved.dropped = false;
-            saved.ammo = weapons.Inventory.GetSlot(index).LoadedAmmo;
-            if (weapons.Inventory.SelectedIndex == index) progress.equippedDealerId = offer.id;
+            saved.slot = i;
+        }
+        foreach (var pickup in FindObjectsByType<WeaponPickup>())
+        {
+            if (!pickup.isActiveAndEnabled || pickup.ReserveAmmo < 0 || string.IsNullOrEmpty(pickup.OriginId) ||
+                !(pickup.Definition is WeaponData gun) || gun.useType != WeaponUseType.Gun) continue;
+            var saved = Record(pickup.OriginId);
+            saved.ammo = pickup.LoadedAmmo;
+            saved.reserve = pickup.ReserveAmmo;
+            saved.hasMagazine = true;
+            saved.dropped = true;
+            saved.dropPosition = pickup.transform.position;
+            saved.dropRotation = pickup.transform.rotation;
         }
     }
 
@@ -165,10 +205,10 @@ public sealed class HarvestTrade : MonoBehaviour
         resumeInput = true;
     }
 
-    private static WeaponPickup FindDropped(WeaponData weapon)
+    private static WeaponPickup FindDropped(string id)
     {
         foreach (var pickup in FindObjectsByType<WeaponPickup>())
-            if (pickup.isActiveAndEnabled && pickup.Definition == weapon) return pickup;
+            if (pickup.isActiveAndEnabled && pickup.OriginId == id) return pickup;
         return null;
     }
 
@@ -184,9 +224,10 @@ public sealed class HarvestTrade : MonoBehaviour
         {
             if (saved == null && Meat < offer.price) return;
             // A paid item dropped with Q can also be reclaimed at the counter.
-            var dropped = saved != null ? FindDropped(offer.weapon) : null;
+            var dropped = saved != null ? FindDropped(offer.id) : null;
             int ammo = dropped != null ? dropped.LoadedAmmo : saved?.ammo ?? offer.weapon.maxAmmo;
-            if (!weapons.Inventory.TryAdd(offer.weapon, ammo)) return;
+            int reserve = dropped != null ? dropped.ReserveAmmo : saved?.SavedReserve ?? -1;
+            if (!weapons.Inventory.TryAdd(offer.weapon, ammo, reserve, offer.id)) return;
             if (dropped != null) dropped.gameObject.SetActive(false);
             if (saved == null)
             {

@@ -21,6 +21,8 @@ MonoBehaviour:
   damage: 30
   cooldown: 0.48
   maxAmmo: 90
+  magazineSize: 30
+  reloadDuration: 1.8
   sightStyle: 1
   sightReference: {x: -0.180207, y: 0.10956505, z: 0.0018759966}
   aimFieldOfViewScale: 0.63

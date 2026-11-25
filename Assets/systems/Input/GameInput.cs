@@ -25,6 +25,7 @@ public enum GameAction
     Hotbar8,
     Hotbar9,
     Aim,
+    Reload,
 }
 
 /// <summary>
@@ -72,6 +73,7 @@ public static class GameInput
         new Definition(GameAction.Hotbar8, "Equip Hotbar Slot 8", "<Keyboard>/8"),
         new Definition(GameAction.Hotbar9, "Equip Hotbar Slot 9", "<Keyboard>/9"),
         new Definition(GameAction.Aim, "Aim Down Sights", "<Mouse>/rightButton"),
+        new Definition(GameAction.Reload, "Reload", "<Keyboard>/r"),
     };
 
     private static InputActionMap map;
